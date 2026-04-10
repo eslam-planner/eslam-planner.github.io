@@ -154,6 +154,17 @@
                     <button id="saveProfileBtn" class="btn btn-primary" style="width: 100%;"><span data-i18n="btn_save_local">حفظ البيانات محلياً</span></button>
                     
                     <hr style="margin: 20px 0;">
+                    
+                    <h3 data-i18n="title_appearance">المظهر والألوان 🎨</h3>
+                    <div class="theme-options" style="display: flex; gap: 10px; margin-top: 10px; margin-bottom: 20px;">
+                        <button class="color-btn" data-theme="theme-green" style="background: #25D366;" title="Green"></button>
+                        <button class="color-btn" data-theme="theme-blue" style="background: #3b82f6;" title="Blue"></button>
+                        <button class="color-btn" data-theme="theme-purple" style="background: #8b5cf6;" title="Purple"></button>
+                        <button class="color-btn" data-theme="theme-orange" style="background: #f97316;" title="Orange"></button>
+                        <button class="color-btn" data-theme="theme-rose" style="background: #f43f5e;" title="Rose"></button>
+                    </div>
+
+                    <hr style="margin: 20px 0;">
                     <h3 data-i18n="title_sync">المزامنة السحابية الحية ☁️</h3>
                     <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:10px;" data-i18n="sync_desc">عند تسجيل الخروج سيتم مسح بياناتك من هذا الجهاز لضمان السرية، وستبقى آمنة في حسابك.</p>
                     <div id="cloudStatus" style="background:var(--bg-color); padding:15px; border-radius:8px; border:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;"></div>
@@ -222,6 +233,7 @@
             <h3 data-i18n="btn_add_ref">إضافة مرجع</h3>
             <input type="text" id="libTitle" placeholder="العنوان" required>
             <input type="text" id="libCategory" placeholder="التصنيف" required style="margin-top:10px;">
+            
             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; margin-bottom: 5px; background: rgba(37, 211, 102, 0.1); padding: 8px; border-radius: 6px;">
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <span style="font-size:0.85rem; color:var(--text-main); font-weight:600;" id="dictateStatusLib" data-i18n="lib_dictate_hint">المحتوى</span>
@@ -232,6 +244,7 @@
                 </div>
                 <button type="button" id="dictateLibBtn" class="icon-btn" style="color:var(--primary); font-size: 1.2rem;" title="تحدث ليتم الكتابة تلقائياً"><i class="fa-solid fa-microphone"></i></button>
             </div>
+            
             <textarea id="libContent" rows="5" placeholder="..." style="margin-top:0;"></textarea>
             <div class="modal-actions"><button class="btn btn-secondary close-modal">إلغاء</button><button id="saveLibBtn" class="btn btn-primary">حفظ</button></div>
         </div>

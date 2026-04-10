@@ -33,7 +33,9 @@ if (firebaseConfig.apiKey && firebaseConfig.apiKey.length > 10 && firebaseConfig
     document.addEventListener('DOMContentLoaded', () => { const cloudStatus = document.getElementById('cloudStatus'); if(cloudStatus) cloudStatus.innerHTML = `<span style="color:var(--warning); font-weight:bold;"><i class="fa-solid fa-triangle-exclamation"></i> ${currentLang === 'ar' ? 'المزامنة السحابية غير مفعلة (أضف المفاتيح بالكود)' : 'Cloud Sync Disabled (Add API keys)'}</span>`; });
 }
 
-// الترجمة واللغات (للواجهة فقط)
+// ----------------------------------------
+// الترجمة وإدارة الألوان
+// ----------------------------------------
 const i18n = {
     ar: {
         nav_dash: "لوحة التحكم", nav_month: "خطة الشهر", nav_today: "اليوم", nav_pomodoro: "مؤقت التركيز", nav_kanban: "المشاريع", nav_habits: "متتبع العادات", nav_finance: "المتتبع المالي", nav_lib: "مكتبة المراجع", nav_notes: "الملاحظات", nav_settings: "الإعدادات والمزامنة",
@@ -49,6 +51,7 @@ const i18n = {
         title_habits: "متتبع العادات", 
         title_notes: "الملاحظات", btn_add_note: "إضافة ملاحظة",
         title_settings: "الإعدادات والمزامنة", label_name: "الاسم", btn_save_local: "حفظ البيانات محلياً",
+        title_appearance: "المظهر والألوان 🎨",
         title_sync: "المزامنة السحابية الحية ☁️", sync_desc: "عند تسجيل الخروج سيتم مسح بياناتك من هذا الجهاز لضمان السرية، وستبقى آمنة في حسابك.",
         title_backup: "النسخ الاحتياطي اليدوي", btn_download: "تنزيل البيانات", btn_restore: "استرجاع ملف",
         chart_done: "مكتملة", chart_pend: "غير مكتملة"
@@ -67,6 +70,7 @@ const i18n = {
         title_habits: "Habit Tracker", 
         title_notes: "Notes", btn_add_note: "Add Note",
         title_settings: "Settings & Sync", label_name: "Name", btn_save_local: "Save Locally",
+        title_appearance: "Appearance & Colors 🎨",
         title_sync: "Live Cloud Sync ☁️", sync_desc: "Logging out will securely wipe data from this device. It remains safe in your cloud account.",
         title_backup: "Manual Backup", btn_download: "Download Data", btn_restore: "Restore File",
         chart_done: "Completed", chart_pend: "Pending"
@@ -82,6 +86,24 @@ function setLanguage(lang) {
     const kbInp = document.getElementById('newKbItem'); if(kbInp) kbInp.placeholder = lang === 'ar' ? 'اكتب اسم المشروع / المهمة هنا...' : 'Type project / task name here...';
     const hbInp = document.getElementById('newHabitInput'); if(hbInp) hbInp.placeholder = lang === 'ar' ? 'عادة جديدة...' : 'New habit...';
     renderViews(); 
+}
+
+function initColorTheme() {
+    let savedTheme = localStorage.getItem('fp_color_theme') || 'theme-green';
+    if(savedTheme !== 'theme-green') document.documentElement.classList.add(savedTheme);
+    
+    document.querySelectorAll('.color-btn').forEach(btn => {
+        if(btn.dataset.theme === savedTheme) btn.classList.add('active');
+        btn.onclick = () => {
+            document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.documentElement.classList.remove('theme-blue', 'theme-purple', 'theme-orange', 'theme-rose');
+            let newTheme = btn.dataset.theme;
+            if(newTheme !== 'theme-green') document.documentElement.classList.add(newTheme);
+            localStorage.setItem('fp_color_theme', newTheme);
+            renderDashboard(); // لتحديث لون الرسم البياني
+        };
+    });
 }
 
 // Local State
@@ -112,7 +134,7 @@ window.logoutCloud = () => { auth.signOut().then(() => { localStorage.clear(); l
 function linkify(text) { const urlRegex = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%Sub=~_|])/ig; const phoneRegex = /(\b\d{10,14}\b)/g; return text.replace(urlRegex, url => `<a href="${url}" target="_blank">${url}</a>`).replace(phoneRegex, phone => `<a href="tel:${phone}">${phone}</a>`); }
 
 // ----------------------------------------
-// الذكاء الاصطناعي - إصلاح تكرار الكلمات للهاتف
+// الذكاء الاصطناعي - تحويل الصوت لنص
 // ----------------------------------------
 let dictationRecognition = null; let isDictating = false; let currentDictationTarget = null;
 function initDictation() {
@@ -122,7 +144,7 @@ function initDictation() {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition; 
         dictationRecognition = new SpeechRecognition(); 
         dictationRecognition.continuous = true; 
-        dictationRecognition.interimResults = false; // يمنع تكرار الكلمات على الجوال 100%
+        dictationRecognition.interimResults = false;
         
         dictationRecognition.onstart = function() { 
             isDictating = true; 
@@ -168,7 +190,7 @@ function stopDictation() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    initTheme(); initModals(); initProfile(); initBackup(); initDictation(); setLanguage(currentLang);
+    initTheme(); initColorTheme(); initModals(); initProfile(); initBackup(); initDictation(); setLanguage(currentLang);
     document.getElementById('langToggleBtn').onclick = () => { setLanguage(currentLang === 'ar' ? 'en' : 'ar'); };
     const viewDailyDate = document.getElementById('viewDailyDate');
     if(viewDailyDate) { viewDailyDate.value = currentDailyDate; viewDailyDate.addEventListener('change', (e) => { currentDailyDate = e.target.value; renderDaily(); }); }
@@ -178,15 +200,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('nextMonthBtn').onclick = () => { currentMonthView++; if(currentMonthView > 11) { currentMonthView = 0; currentYearView++; } renderViews(); };
     document.getElementById('openTaskBtnMobile').onclick = () => { document.getElementById('taskDate').value = currentDailyDate; document.getElementById('taskModal').classList.add('show'); };
     document.querySelectorAll('.nav-item').forEach(link => { link.addEventListener('click', (e) => { e.preventDefault(); document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active')); e.currentTarget.classList.add('active'); let target = e.currentTarget.getAttribute('data-target'); document.getElementById(target).classList.add('active'); const fab = document.getElementById('openTaskModalBtn'); if(target === 'dailyView') fab.style.display = 'block'; else fab.style.display = 'none'; renderViews(); }); });
-    document.getElementById('shareEmptyBtn').onclick = () => window.open(`https://wa.me/?text=${encodeURIComponent("تطبيق Planner لتنظيم الوقت وإدارة المهام: https://eslam-planner.netlify.app/")}`, '_blank');
+    document.getElementById('shareEmptyBtn').onclick = () => window.open(`https://wa.me/?text=${encodeURIComponent("تطبيق Planner لتنظيم الوقت وإدارة المهام: https://eslam-planner.github.io/")}`, '_blank');
     initPomodoro(); renderViews();
 });
 
 function renderViews() { renderDashboard(); renderMonthly(); renderDaily(); renderKanban(); renderHabits(); renderFinance(); renderLibrary(); renderNotes(); }
 
-// ----------------------------------------
-// جدول اليوم: إلغاء السحب والإفلات وإضافة خاصية الضغط للتعديل
-// ----------------------------------------
 function renderDaily() { 
     const container = document.getElementById('plannerContainer'); container.innerHTML = ''; 
     const todayTasks = tasks.filter(t => t.date === currentDailyDate); 
@@ -208,9 +227,6 @@ document.getElementById('saveTaskBtn').onclick = () => { const t = document.getE
 window.toggleTask = id => { tasks = tasks.map(t => t.id === id ? {...t, completed: !t.completed} : t); saveAll(); renderDaily(); renderDashboard(); }
 window.delTask = id => { tasks = tasks.filter(t => t.id !== id); saveAll(); renderDaily(); renderDashboard(); }
 
-// ----------------------------------------
-// تعديل المهمة بالضغط (والترحيل لخطة الشهر)
-// ----------------------------------------
 window.editTask = (id) => {
     let task = tasks.find(t => t.id === id);
     if(!task) return;
@@ -245,7 +261,6 @@ document.getElementById('updateTaskBtn').onclick = () => {
         task.date = dateStr;
         task.hour = hour;
         
-        // الترحيل الذكي إلى خطة الشهر إذا تغير التاريخ
         if(dateStr !== oldDate) {
             let [y, m, d] = dateStr.split('-');
             let monthIndex = parseInt(m) - 1;
@@ -258,9 +273,7 @@ document.getElementById('updateTaskBtn').onclick = () => {
             localStorage.setItem(storageKey, currentText ? currentText + '\n' + appendText : appendText);
         }
         
-        saveAll();
-        renderViews();
-        document.getElementById('editTaskModal').classList.remove('show');
+        saveAll(); renderViews(); document.getElementById('editTaskModal').classList.remove('show');
     }
 };
 
@@ -289,11 +302,16 @@ function renderDashboard() {
     
     let tHC = 0; let dHC = 0; habits.forEach(h => { for(let i=1; i<=30; i++) { tHC++; if(h.days[`${currentYearView}-${currentMonthView}-${i}`]) dHC++; } }); document.getElementById('dashHabits').innerText = `${tHC === 0 ? 0 : Math.round((dHC/tHC)*100)}%`;
     let balance = finances.reduce((acc, curr) => curr.type === 'income' ? acc + Number(curr.amount) : acc - Number(curr.amount), 0); document.getElementById('dashBalance').innerText = `${balance}`;
+    
     let resetDate = localStorage.getItem('fp_stats_reset') || "2000-01-01";
     const ctx = document.getElementById('tasksChart').getContext('2d'); if(myChart) myChart.destroy();
     let labels = []; let dataDone = []; let dataPending = []; 
     for(let i=6; i>=0; i--) { let d = new Date(); d.setDate(d.getDate() - i); let dateStr = new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().split('T')[0]; labels.push(d.toLocaleDateString(currentLang==='ar'?'ar-EG':'en-US', {weekday: 'short'})); let dayTasks = tasks.filter(t => t.date === dateStr && t.date >= resetDate); dataDone.push(dayTasks.filter(t => t.completed).length); dataPending.push(dayTasks.filter(t => !t.completed).length); }
-    myChart = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [ { label: i18n[currentLang].chart_done, data: dataDone, backgroundColor: '#25D366' }, { label: i18n[currentLang].chart_pend, data: dataPending, backgroundColor: '#ef4444' } ] }, options: { responsive: true, scales: { y: { beginAtZero: true, ticks: {stepSize: 1} } } } });
+    
+    // جلب اللون الأساسي الحالي للرسم البياني
+    let primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#25D366';
+    
+    myChart = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [ { label: i18n[currentLang].chart_done, data: dataDone, backgroundColor: primaryColor }, { label: i18n[currentLang].chart_pend, data: dataPending, backgroundColor: '#ef4444' } ] }, options: { responsive: true, scales: { y: { beginAtZero: true, ticks: {stepSize: 1} } } } });
 }
 
 function renderFinance() { const container = document.getElementById('financeContainer'); let inc = 0, exp = 0; let html = finances.sort((a,b) => new Date(b.date) - new Date(a.date)).map(f => { if(f.type === 'income') inc += Number(f.amount); else exp += Number(f.amount); let icon = f.type === 'income' ? '<i class="fa-solid fa-arrow-trend-up"></i>' : '<i class="fa-solid fa-arrow-trend-down"></i>'; let cls = f.type === 'income' ? 'inc' : 'exp'; return `<div class="fin-item"><div><small style="color:var(--text-muted)">${f.date}</small><br><b>${f.desc}</b></div><div style="display:flex; align-items:center; gap:15px;"><span class="fin-amt ${cls}">${icon} ${f.amount}</span><button class="icon-btn no-print" style="color:var(--danger); font-size:1rem;" onclick="delFin(${f.id})"><i class="fa-solid fa-trash"></i></button></div></div>`; }).join(''); document.getElementById('totalIncome').innerText = inc; document.getElementById('totalExpense').innerText = exp; document.getElementById('netBalance').innerText = inc - exp; container.innerHTML = html || `<p style="text-align:center; color:var(--text-muted);">${currentLang==='ar'?'لا توجد معاملات.':'No transactions yet.'}</p>`; }
