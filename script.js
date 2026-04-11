@@ -35,7 +35,7 @@ if (firebaseConfig.apiKey && firebaseConfig.apiKey.length > 10 && firebaseConfig
 }
 
 // ----------------------------------------
-// قاموس الترجمة المحدث (شامل لكل النوافذ والأزرار)
+// الترجمة واللغات (تعمل بشكل مثالي ولا تمس بياناتك)
 // ----------------------------------------
 const i18n = {
     ar: {
@@ -44,13 +44,13 @@ const i18n = {
         title_dash: "لوحة التحكم والإحصائيات", btn_clear_comp: "مسح المكتملة", btn_clear_today: "مسح مهام اليوم", btn_hide_dash: "إخفاء مهام اليوم", btn_reset_stats: "تصفير الإحصائيات",
         card_tasks: "المهام اليوم", card_bal: "الرصيد المتاح", card_habits: "إنجاز العادات",
         title_finance: "المتتبع المالي", btn_add_trans: "معاملة", fin_inc: "الدخل", fin_exp: "المصروفات", fin_bal: "الرصيد", btn_edit_trans: "تعديل المعاملة",
-        title_lib: "المراجع والأصول", btn_add_ref: "إضافة مرجع", lib_dictate_hint: "المحتوى",
+        title_lib: "المراجع والأصول", btn_add_ref: "إضافة مرجع", btn_edit_ref: "تعديل المرجع", lib_dictate_hint: "المحتوى",
         btn_prev: "السابق", btn_next: "التالي",
         title_today: "جدول اليوم", btn_add: "إضافة", btn_edit_task: "تعديل المهمة", btn_update: "تحديث",
         title_pom: "مؤقت التركيز (Pomodoro)", btn_work: "عمل", btn_break: "استراحة", btn_start: "ابدأ", btn_pause: "إيقاف مؤقت", btn_reset: "إعادة", btn_stop_alarm: "إيقاف الرنين",
-        title_kanban: "لوحة المشاريع", kb_todo: "💡 أفكار/مهام", kb_inprog: "⏳ التنفيذ", kb_done: "✅ مكتملة",
+        title_kanban: "لوحة المشاريع", kb_todo: "💡 أفكار/مهام", kb_inprog: "⏳ التنفيذ", kb_done: "✅ مكتملة", btn_edit_kb: "تعديل المشروع",
         title_habits: "متتبع العادات", 
-        title_notes: "الملاحظات", btn_add_note: "إضافة ملاحظة",
+        title_notes: "الملاحظات", btn_add_note: "إضافة ملاحظة", btn_edit_note: "تعديل الملاحظة",
         title_settings: "الإعدادات والمزامنة", label_name: "الاسم", btn_save_local: "حفظ البيانات محلياً",
         title_appearance: "المظهر والألوان 🎨",
         title_sync: "المزامنة السحابية الحية ☁️", sync_desc: "عند تسجيل الخروج سيتم مسح بياناتك من هذا الجهاز لضمان السرية، وستبقى آمنة في حسابك.",
@@ -63,13 +63,13 @@ const i18n = {
         title_dash: "Dashboard & Stats", btn_clear_comp: "Clear Completed", btn_clear_today: "Clear Today", btn_hide_dash: "Hide from Dash", btn_reset_stats: "Reset Stats",
         card_tasks: "Today's Tasks", card_bal: "Available Balance", card_habits: "Habits Rate",
         title_finance: "Finance Tracker", btn_add_trans: "Transaction", fin_inc: "Income", fin_exp: "Expense", fin_bal: "Balance", btn_edit_trans: "Edit Transaction",
-        title_lib: "Library & Assets", btn_add_ref: "Add Reference", lib_dictate_hint: "Content",
+        title_lib: "Library & Assets", btn_add_ref: "Add Reference", btn_edit_ref: "Edit Reference", lib_dictate_hint: "Content",
         btn_prev: "Previous", btn_next: "Next",
         title_today: "Today's Schedule", btn_add: "Add Task", btn_edit_task: "Edit Task", btn_update: "Update",
         title_pom: "Focus Timer (Pomodoro)", btn_work: "Work", btn_break: "Break", btn_start: "Start", btn_pause: "Pause", btn_reset: "Reset", btn_stop_alarm: "Stop Alarm",
-        title_kanban: "Projects Board", kb_todo: "💡 Ideas / To-Do", kb_inprog: "⏳ In Progress", kb_done: "✅ Done",
+        title_kanban: "Projects Board", kb_todo: "💡 Ideas / To-Do", kb_inprog: "⏳ In Progress", kb_done: "✅ Done", btn_edit_kb: "Edit Project",
         title_habits: "Habit Tracker", 
-        title_notes: "Notes", btn_add_note: "Add Note",
+        title_notes: "Notes", btn_add_note: "Add Note", btn_edit_note: "Edit Note",
         title_settings: "Settings & Sync", label_name: "Name", btn_save_local: "Save Locally",
         title_appearance: "Appearance & Colors 🎨",
         title_sync: "Live Cloud Sync ☁️", sync_desc: "Logging out will securely wipe data from this device. It remains safe in your cloud account.",
@@ -83,8 +83,8 @@ function setLanguage(lang) {
     currentLang = lang; localStorage.setItem('fp_lang', lang);
     document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr'; document.documentElement.lang = lang;
     document.querySelectorAll('[data-i18n]').forEach(el => { const key = el.getAttribute('data-i18n'); if(i18n[lang][key]) el.innerHTML = i18n[lang][key]; });
-    const toggleBtn = document.getElementById('langToggleBtn'); if(toggleBtn) toggleBtn.innerHTML = lang === 'ar' ? '<i class="fa-solid fa-language"></i> <span>EN</span>' : '<i class="fa-solid fa-language"></i> <span>AR</span>';
-    const kbInp = document.getElementById('newKbItem'); if(kbInp) kbInp.placeholder = lang === 'ar' ? 'اكتب اسم المشروع / المهمة هنا...' : 'Type project / task name here...';
+    const toggleBtn = document.getElementById('langLabel'); if(toggleBtn) toggleBtn.innerHTML = lang === 'ar' ? 'EN' : 'AR';
+    const kbInp = document.getElementById('newKbItem'); if(kbInp) kbInp.placeholder = lang === 'ar' ? 'اكتب اسم المشروع / المهمة هنا... (اضغط Enter لسطر جديد)' : 'Type project name... (Press Enter for new line)';
     const hbInp = document.getElementById('newHabitInput'); if(hbInp) hbInp.placeholder = lang === 'ar' ? 'عادة جديدة...' : 'New habit...';
     renderViews(); 
 }
@@ -121,31 +121,12 @@ function saveAll() {
 function loadFromCloud() { db.collection('users').doc(currentUser.uid).get().then(doc => { if (doc.exists) { const data = doc.data(); if(data.tasks) tasks = data.tasks; if(data.notes) notes = data.notes; if(data.kanbanTasks) kanbanTasks = data.kanbanTasks; if(data.habits) habits = data.habits; if(data.finances) finances = data.finances; if(data.library) library = data.library; if(data.profile) profile = data.profile; if(data.monthlyData) { for(let k in data.monthlyData) localStorage.setItem(k, data.monthlyData[k]); } saveAll(); renderViews(); } }); }
 
 // ----------------------------------------
-// دوال الفتح وتفريغ النوافذ (تعمل الآن بنجاح 100%)
+// دوال الفتح لتفريغ النوافذ 100%
 // ----------------------------------------
-window.openTaskModal = () => {
-    document.getElementById('taskTitle').value = '';
-    document.getElementById('taskDate').value = currentDailyDate;
-    document.getElementById('taskModal').classList.add('show');
-};
-window.openNoteModal = () => {
-    document.getElementById('noteTitle').value = '';
-    document.getElementById('noteContent').value = '';
-    document.getElementById('noteDate').value = currentTodayStr;
-    document.getElementById('noteModal').classList.add('show');
-};
-window.openLibModal = () => {
-    document.getElementById('libTitle').value = '';
-    document.getElementById('libCategory').value = '';
-    document.getElementById('libContent').value = '';
-    document.getElementById('libraryModal').classList.add('show');
-};
-window.openFinModal = () => {
-    document.getElementById('finDesc').value = '';
-    document.getElementById('finAmount').value = '';
-    document.getElementById('finDate').value = currentTodayStr;
-    document.getElementById('financeModal').classList.add('show');
-};
+window.openTaskModal = () => { document.getElementById('taskTitle').value = ''; document.getElementById('taskDate').value = currentDailyDate; document.getElementById('taskModal').classList.add('show'); };
+window.openNoteModal = () => { document.getElementById('noteTitle').value = ''; document.getElementById('noteContent').value = ''; document.getElementById('noteDate').value = currentTodayStr; document.getElementById('noteModal').classList.add('show'); };
+window.openLibModal = () => { document.getElementById('libTitle').value = ''; document.getElementById('libCategory').value = ''; document.getElementById('libContent').value = ''; document.getElementById('libraryModal').classList.add('show'); };
+window.openFinModal = () => { document.getElementById('finDesc').value = ''; document.getElementById('finAmount').value = ''; document.getElementById('finDate').value = currentTodayStr; document.getElementById('financeModal').classList.add('show'); };
 
 window.clearDailyTasks = (type) => { 
     if(type === 'completed') { if(confirm(currentLang==='ar'?'مسح المهام المكتملة لهذا اليوم فقط؟':'Clear completed tasks for today?')) { tasks = tasks.filter(t => !(t.completed && t.date === currentTodayStr)); saveAll(); renderViews(); } } 
@@ -159,34 +140,77 @@ window.logoutCloud = () => { auth.signOut().then(() => { localStorage.clear(); l
 
 function linkify(text) { const urlRegex = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%Sub=~_|])/ig; const phoneRegex = /(\b\d{10,14}\b)/g; return text.replace(urlRegex, url => `<a href="${url}" target="_blank">${url}</a>`).replace(phoneRegex, phone => `<a href="tel:${phone}">${phone}</a>`); }
 
-let dictationRecognition = null; let isDictating = false; let currentDictationTarget = null;
-function initDictation() {
-    const dictateLibBtn = document.getElementById('dictateLibBtn');
-    const dictateNoteBtn = document.getElementById('dictateNoteBtn');
-    if (('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition; 
-        dictationRecognition = new SpeechRecognition(); dictationRecognition.continuous = true; dictationRecognition.interimResults = false;
-        dictationRecognition.onstart = function() { isDictating = true; let btn = currentDictationTarget === 'lib' ? dictateLibBtn : dictateNoteBtn; let status = document.getElementById(currentDictationTarget === 'lib' ? 'dictateStatusLib' : 'dictateStatusNote'); if(btn) { btn.classList.add('recording'); btn.innerHTML = '<i class="fa-solid fa-stop"></i>'; } if(status) { status.innerText = currentLang === 'ar' ? 'جاري الاستماع...' : 'Listening...'; status.style.color = 'var(--danger)'; } };
-        dictationRecognition.onresult = function(event) { let transcript = event.results[event.results.length - 1][0].transcript; let targetInput = document.getElementById(currentDictationTarget === 'lib' ? 'libContent' : 'noteContent'); if(targetInput) { targetInput.value = targetInput.value + (targetInput.value ? ' ' : '') + transcript; } };
-        dictationRecognition.onend = function() { if(isDictating) dictationRecognition.start(); else stopDictation(); };
-        const startDictation = (target) => { if (isDictating) { isDictating = false; dictationRecognition.stop(); } else { currentDictationTarget = target; let langSelect = document.getElementById(target === 'lib' ? 'dictateLangLib' : 'dictateLangNote'); dictationRecognition.lang = langSelect ? langSelect.value : (currentLang === 'ar' ? 'ar-EG' : 'en-US'); dictationRecognition.start(); } };
-        if(dictateLibBtn) dictateLibBtn.onclick = () => startDictation('lib');
-        if(dictateNoteBtn) dictateNoteBtn.onclick = () => startDictation('note');
-    }
-}
-function stopDictation() { isDictating = false; if(dictationRecognition) dictationRecognition.stop(); }
+// ----------------------------------------
+// برمجة الذكاء الاصطناعي (مستمر ولا يقطع الكلام)
+// ----------------------------------------
+let dictationRecognition = null; let isDictating = false; 
+let currentStartBtn = null, currentStopBtn = null, currentStatus = null, currentInput = null;
+
+window.startContinuousDictation = (inputId, langId, statusId, startBtnId, stopBtnId) => {
+    if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) { alert(currentLang === 'ar' ? 'المتصفح لا يدعم تحويل الصوت لنص.' : 'Speech to text not supported.'); return; }
+    if(isDictating) stopContinuousDictation(); // إيقاف أي تسجيل قديم
+    
+    currentStartBtn = document.getElementById(startBtnId);
+    currentStopBtn = document.getElementById(stopBtnId);
+    currentStatus = document.getElementById(statusId);
+    currentInput = document.getElementById(inputId);
+    
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition; 
+    dictationRecognition = new SpeechRecognition(); 
+    dictationRecognition.continuous = true; // السر هنا: استمرار الاستماع
+    dictationRecognition.interimResults = true; // إظهار النتائج الفورية
+    dictationRecognition.lang = document.getElementById(langId).value;
+
+    let finalTranscript = '';
+
+    dictationRecognition.onstart = () => { 
+        isDictating = true; 
+        currentStartBtn.style.display = 'none'; currentStopBtn.style.display = 'inline-flex';
+        currentStatus.innerText = currentLang === 'ar' ? 'جاري الاستماع...' : 'Listening...'; 
+        currentStatus.style.color = 'var(--danger)'; 
+    };
+
+    dictationRecognition.onresult = (event) => { 
+        let interimTranscript = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+            if (event.results[i].isFinal) {
+                finalTranscript += event.results[i][0].transcript + ' ';
+                // إضافة النص فوراً للمربع
+                currentInput.value = currentInput.value + (currentInput.value.endsWith(' ') || currentInput.value === '' ? '' : ' ') + event.results[i][0].transcript;
+            } else {
+                interimTranscript += event.results[i][0].transcript;
+            }
+        }
+    };
+
+    dictationRecognition.onend = () => { 
+        // إذا توقف المتصفح تلقائياً ولم يضغط المستخدم إيقاف، نعيد تشغيله
+        if(isDictating) { try { dictationRecognition.start(); } catch(e) {} } 
+        else {
+            currentStartBtn.style.display = 'inline-flex'; currentStopBtn.style.display = 'none';
+            currentStatus.innerText = currentLang === 'ar' ? 'المحتوى' : 'Content'; 
+            currentStatus.style.color = 'var(--text-main)'; 
+        }
+    };
+    try { dictationRecognition.start(); } catch(e) {}
+};
+
+window.stopContinuousDictation = () => { 
+    isDictating = false; 
+    if(dictationRecognition) dictationRecognition.stop(); 
+    if(currentStartBtn) { currentStartBtn.style.display = 'inline-flex'; currentStopBtn.style.display = 'none'; }
+    if(currentStatus) { currentStatus.innerText = currentLang === 'ar' ? 'المحتوى' : 'Content'; currentStatus.style.color = 'var(--text-main)'; }
+};
 
 document.addEventListener('DOMContentLoaded', () => {
-    initTheme(); initColorTheme(); initModals(); initProfile(); initBackup(); initDictation(); setLanguage(currentLang);
+    initTheme(); initColorTheme(); initModals(); initProfile(); initBackup(); setLanguage(currentLang);
     
-    // تفعيل زر الدعوة/المشاركة
+    document.getElementById('langToggleBtn').onclick = () => { setLanguage(currentLang === 'ar' ? 'en' : 'ar'); };
+    
     document.getElementById('shareEmptyBtn').onclick = () => {
         const text = currentLang === 'ar' ? "جربت تطبيق Planner Pro Max لتنظيم الوقت وإدارة المهام وكان ممتاز! جربه مجاناً من هنا: https://eslam-planner.github.io/" : "Try out Planner Pro Max for free: https://eslam-planner.github.io/";
-        if (navigator.share) {
-            navigator.share({ title: 'Planner Pro Max', text: text, url: 'https://eslam-planner.github.io/' }).catch(console.error);
-        } else {
-            window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-        }
+        if (navigator.share) { navigator.share({ title: 'Planner Pro Max', text: text, url: 'https://eslam-planner.github.io/' }).catch(console.error);
+        } else { window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank'); }
     };
 
     const viewDailyDate = document.getElementById('viewDailyDate');
@@ -231,99 +255,75 @@ window.editTask = (id) => {
     for(let i = 6; i <= 23; i++) { let opt = document.createElement('option'); opt.value = i; opt.textContent = i === 12 ? '12 PM' : (i > 12 ? `${i - 12} PM` : `${i} AM`); if(i == task.hour) opt.selected = true; hourSelect.appendChild(opt); }
     document.getElementById('editTaskModal').classList.add('show');
 };
-
 document.getElementById('updateTaskBtn').onclick = () => {
     let id = parseInt(document.getElementById('editTaskId').value); let title = document.getElementById('editTaskTitle').value; let dateStr = document.getElementById('editTaskDate').value; let hour = document.getElementById('editTaskHour').value;
     if(!title) return; let task = tasks.find(t => t.id === id);
-    if(task) {
-        let oldDate = task.date; task.title = title; task.date = dateStr; task.hour = hour;
-        if(dateStr !== oldDate) { let [y, m, d] = dateStr.split('-'); let storageKey = `PlannerMonthData_${parseInt(y)}_${parseInt(m)-1}_${parseInt(d)}`; let currentText = localStorage.getItem(storageKey) || ""; let timeTxt = hour == 12 ? '12 PM' : (hour > 12 ? (hour-12)+' PM' : hour+' AM'); localStorage.setItem(storageKey, currentText ? currentText + '\n- ' + title + ' ('+timeTxt+')' : '- ' + title + ' ('+timeTxt+')'); }
-        saveAll(); renderViews(); document.getElementById('editTaskModal').classList.remove('show');
-    }
+    if(task) { let oldDate = task.date; task.title = title; task.date = dateStr; task.hour = hour; if(dateStr !== oldDate) { let [y, m, d] = dateStr.split('-'); let storageKey = `PlannerMonthData_${parseInt(y)}_${parseInt(m)-1}_${parseInt(d)}`; let currentText = localStorage.getItem(storageKey) || ""; let timeTxt = hour == 12 ? '12 PM' : (hour > 12 ? (hour-12)+' PM' : hour+' AM'); localStorage.setItem(storageKey, currentText ? currentText + '\n- ' + title + ' ('+timeTxt+')' : '- ' + title + ' ('+timeTxt+')'); } saveAll(); renderViews(); document.getElementById('editTaskModal').classList.remove('show'); }
 };
 
+// ----------------------------------------
+// برمجة الملاحظات والمراجع (مع التعديل)
+// ----------------------------------------
 function renderNotes() { 
     const container = document.getElementById('notesContainer'); 
     container.innerHTML = notes.length === 0 ? `<p style="text-align:center; color:var(--text-muted); grid-column: 1/-1;">${currentLang==='ar'?'لا توجد ملاحظات.':'No notes.'}</p>` : ''; 
-    notes.forEach(note => { container.innerHTML += `<div class="note-card"><button class="delete-note no-print" onclick="deleteNote(${note.id})"><i class="fa-solid fa-trash"></i></button><span class="note-date"><i class="fa-solid fa-calendar"></i> ${note.date}</span><h3 style="margin-bottom: 0.5rem;">${note.title}</h3><p style="color:var(--text-muted); font-size:0.95rem; white-space: pre-wrap;">${note.content}</p></div>`; }); 
+    notes.forEach(note => { container.innerHTML += `<div class="note-card" onclick="editNote(${note.id})"><button class="delete-note no-print" onclick="event.stopPropagation(); deleteNote(${note.id})"><i class="fa-solid fa-trash"></i></button><span class="note-date"><i class="fa-solid fa-calendar"></i> ${note.date}</span><h3 style="margin-bottom: 0.5rem;">${note.title}</h3><p style="color:var(--text-muted); font-size:0.95rem; white-space: pre-wrap;">${note.content}</p></div>`; }); 
 }
-
-document.getElementById('saveNoteBtn').onclick = () => { const t = document.getElementById('noteTitle').value, c = document.getElementById('noteContent').value, d = document.getElementById('noteDate').value; if(!t && !c) return; notes.push({ id: Date.now(), title: t || (currentLang==='ar'?'ملاحظة جديدة':'New Note'), content: c, date: d }); saveAll(); document.getElementById('noteModal').classList.remove('show'); renderNotes(); };
+document.getElementById('saveNoteBtn').onclick = () => { const t = document.getElementById('noteTitle').value, c = document.getElementById('noteContent').value, d = document.getElementById('noteDate').value; if(!t && !c) return; notes.push({ id: Date.now(), title: t || (currentLang==='ar'?'ملاحظة جديدة':'New Note'), content: c, date: d }); saveAll(); document.getElementById('noteModal').classList.remove('show'); stopContinuousDictation(); renderNotes(); };
 window.deleteNote = id => { notes = notes.filter(n => n.id !== id); saveAll(); renderNotes(); }
 
-function renderMonthly() { 
-    const container = document.getElementById('monthlyContainer'); container.innerHTML = ''; 
-    const mNames = currentLang === 'ar' ? monthNamesAr : monthNamesEn; document.getElementById('monthlyTitle').innerText = `${mNames[currentMonthView]} ${currentYearView}`; 
-    const daysInMonth = new Date(currentYearView, currentMonthView + 1, 0).getDate(); 
-    let dayText = currentLang === 'ar' ? 'اليوم:' : 'Day:';
-    let placeholderText = currentLang === 'ar' ? 'اكتب خطتك (الروابط تعمل تلقائياً)' : 'Type your plan (links work automatically)';
-    for(let i = 1; i <= daysInMonth; i++) { 
-        let storageKey = `PlannerMonthData_${currentYearView}_${currentMonthView}_${i}`; let savedText = localStorage.getItem(storageKey) || ""; 
-        const dayDiv = document.createElement('div'); dayDiv.className = 'month-day-card'; 
-        dayDiv.innerHTML = `<div class="month-day-header"><span>${dayText} ${i} ${mNames[currentMonthView]}</span></div><textarea class="multi-line-input no-print" rows="3" data-key="${storageKey}" placeholder="${placeholderText}">${savedText}</textarea><div class="render-area">${linkify(savedText)}</div>`; container.appendChild(dayDiv); 
-    } 
-    document.querySelectorAll('.multi-line-input').forEach(ta => { ta.oninput = e => { e.target.nextElementSibling.innerHTML = linkify(e.target.value); }; ta.onchange = e => { localStorage.setItem(e.target.dataset.key, e.target.value); saveAll(); }; }); 
+window.editNote = (id) => {
+    let n = notes.find(x => x.id === id); if(!n) return;
+    document.getElementById('editNoteId').value = n.id; document.getElementById('editNoteTitle').value = n.title; document.getElementById('editNoteDate').value = n.date; document.getElementById('editNoteContent').value = n.content;
+    document.getElementById('editNoteModal').classList.add('show');
+};
+document.getElementById('updateNoteBtn').onclick = () => {
+    let id = parseInt(document.getElementById('editNoteId').value); let n = notes.find(x => x.id === id);
+    if(n) { n.title = document.getElementById('editNoteTitle').value; n.date = document.getElementById('editNoteDate').value; n.content = document.getElementById('editNoteContent').value; saveAll(); renderNotes(); document.getElementById('editNoteModal').classList.remove('show'); stopContinuousDictation(); }
+};
+
+function renderLibrary() { 
+    const container = document.getElementById('libraryContainer'); 
+    container.innerHTML = library.map(l => `<div class="lib-card" onclick="editLib(${l.id})"><button class="icon-btn no-print" style="position:absolute; top:10px; left:10px; color:var(--danger);" onclick="event.stopPropagation(); delLib(${l.id})"><i class="fa-solid fa-trash"></i></button><span class="lib-cat">${l.category}</span><h3>${l.title}</h3><div class="render-area">${linkify(l.content)}</div></div>`).join('') || `<p style="text-align:center; color:var(--text-muted); grid-column: 1/-1;">${currentLang==='ar'?'أضف مرجعك الأول.':'Add your first reference.'}</p>`; 
 }
+document.getElementById('saveLibBtn').onclick = () => { let t = document.getElementById('libTitle').value, c = document.getElementById('libCategory').value, text = document.getElementById('libContent').value; if(!t) return; library.push({ id: Date.now(), title: t, category: c || 'عام', content: text }); saveAll(); document.getElementById('libraryModal').classList.remove('show'); stopContinuousDictation(); renderLibrary(); };
+window.delLib = id => { library = library.filter(l => l.id !== id); saveAll(); renderLibrary(); }
+
+window.editLib = (id) => {
+    let l = library.find(x => x.id === id); if(!l) return;
+    document.getElementById('editLibId').value = l.id; document.getElementById('editLibTitle').value = l.title; document.getElementById('editLibCategory').value = l.category; document.getElementById('editLibContent').value = l.content;
+    document.getElementById('editLibModal').classList.add('show');
+};
+document.getElementById('updateLibBtn').onclick = () => {
+    let id = parseInt(document.getElementById('editLibId').value); let l = library.find(x => x.id === id);
+    if(l) { l.title = document.getElementById('editLibTitle').value; l.category = document.getElementById('editLibCategory').value; l.content = document.getElementById('editLibContent').value; saveAll(); renderLibrary(); document.getElementById('editLibModal').classList.remove('show'); stopContinuousDictation(); }
+};
+
+function renderMonthly() { const container = document.getElementById('monthlyContainer'); container.innerHTML = ''; const mNames = currentLang === 'ar' ? monthNamesAr : monthNamesEn; document.getElementById('monthlyTitle').innerText = `${mNames[currentMonthView]} ${currentYearView}`; const daysInMonth = new Date(currentYearView, currentMonthView + 1, 0).getDate(); let dayText = currentLang === 'ar' ? 'اليوم:' : 'Day:'; let placeholderText = currentLang === 'ar' ? 'اكتب خطتك (الروابط تعمل تلقائياً)' : 'Type your plan (links work automatically)'; for(let i = 1; i <= daysInMonth; i++) { let storageKey = `PlannerMonthData_${currentYearView}_${currentMonthView}_${i}`; let savedText = localStorage.getItem(storageKey) || ""; const dayDiv = document.createElement('div'); dayDiv.className = 'month-day-card'; dayDiv.innerHTML = `<div class="month-day-header"><span>${dayText} ${i} ${mNames[currentMonthView]}</span></div><textarea class="multi-line-input no-print" rows="3" data-key="${storageKey}" placeholder="${placeholderText}">${savedText}</textarea><div class="render-area">${linkify(savedText)}</div>`; container.appendChild(dayDiv); } document.querySelectorAll('.multi-line-input').forEach(ta => { ta.oninput = e => { e.target.nextElementSibling.innerHTML = linkify(e.target.value); }; ta.onchange = e => { localStorage.setItem(e.target.dataset.key, e.target.value); saveAll(); }; }); }
 
 let pomTimer, targetTime = 0, pomTimeLeft = 25 * 60, isPomRunning = false, pomMode = 'work', workDuration = 25;
 function initPomodoro() { 
-    const d = document.getElementById('timerDisplay'); 
-    const wd = document.getElementById('pomWorkDuration'); 
-    const alarm = document.getElementById('pomAlarmSound');
-    const stopBtn = document.getElementById('stopAlarmBtn');
-    const startBtn = document.getElementById('pomStart');
-    const pauseBtn = document.getElementById('pomPause');
-
+    const d = document.getElementById('timerDisplay'); const wd = document.getElementById('pomWorkDuration'); const alarm = document.getElementById('pomAlarmSound'); const stopBtn = document.getElementById('stopAlarmBtn'); const startBtn = document.getElementById('pomStart'); const pauseBtn = document.getElementById('pomPause');
     const updateTimeDisplay = () => { d.innerText = `${Math.floor(pomTimeLeft/60).toString().padStart(2,'0')}:${(pomTimeLeft%60).toString().padStart(2,'0')}`; }; 
-    
     document.getElementById('pomMinus').onclick = () => { if(!isPomRunning && workDuration > 15) { workDuration -= 5; if(pomMode==='work'){ pomTimeLeft = workDuration*60; updateTimeDisplay();} wd.innerText = workDuration; } }; 
     document.getElementById('pomPlus').onclick = () => { if(!isPomRunning && workDuration < 60) { workDuration += 5; if(pomMode==='work'){ pomTimeLeft = workDuration*60; updateTimeDisplay();} wd.innerText = workDuration; } }; 
-    
-    const setMode = (m, mins) => { 
-        clearInterval(pomTimer); isPomRunning=false; pomMode=m; pomTimeLeft=mins*60; updateTimeDisplay(); 
-        document.getElementById('pomWork').classList.toggle('active', m==='work'); 
-        document.getElementById('pomBreak').classList.toggle('active', m==='break'); 
-        startBtn.style.display = 'inline-flex'; pauseBtn.style.display = 'inline-flex'; stopBtn.style.display = 'none';
-        alarm.pause(); alarm.currentTime = 0;
-    }; 
-    
-    document.getElementById('pomWork').onclick = () => setMode('work', workDuration); 
-    document.getElementById('pomBreak').onclick = () => setMode('break', 5); 
-    
-    startBtn.onclick = () => { 
-        if(isPomRunning) return; 
-        alarm.play().then(()=>alarm.pause()).catch(e=>{}); 
-        isPomRunning = true; 
-        targetTime = Date.now() + (pomTimeLeft * 1000); 
-        
-        pomTimer = setInterval(() => { 
-            let remaining = Math.round((targetTime - Date.now()) / 1000);
-            if(remaining <= 0) { 
-                clearInterval(pomTimer); 
-                isPomRunning=false; 
-                pomTimeLeft=0; 
-                updateTimeDisplay(); 
-                alarm.play(); 
-                startBtn.style.display = 'none'; pauseBtn.style.display = 'none'; stopBtn.style.display = 'inline-flex';
-            } else {
-                pomTimeLeft = remaining;
-                updateTimeDisplay();
-            }
-        }, 1000); 
-    }; 
-    
+    const setMode = (m, mins) => { clearInterval(pomTimer); isPomRunning=false; pomMode=m; pomTimeLeft=mins*60; updateTimeDisplay(); document.getElementById('pomWork').classList.toggle('active', m==='work'); document.getElementById('pomBreak').classList.toggle('active', m==='break'); startBtn.style.display = 'inline-flex'; pauseBtn.style.display = 'inline-flex'; stopBtn.style.display = 'none'; alarm.pause(); alarm.currentTime = 0; }; 
+    document.getElementById('pomWork').onclick = () => setMode('work', workDuration); document.getElementById('pomBreak').onclick = () => setMode('break', 5); 
+    startBtn.onclick = () => { if(isPomRunning) return; alarm.play().then(()=>alarm.pause()).catch(e=>{}); isPomRunning = true; targetTime = Date.now() + (pomTimeLeft * 1000); pomTimer = setInterval(() => { let remaining = Math.round((targetTime - Date.now()) / 1000); if(remaining <= 0) { clearInterval(pomTimer); isPomRunning=false; pomTimeLeft=0; updateTimeDisplay(); alarm.play(); startBtn.style.display = 'none'; pauseBtn.style.display = 'none'; stopBtn.style.display = 'inline-flex'; } else { pomTimeLeft = remaining; updateTimeDisplay(); } }, 1000); }; 
     pauseBtn.onclick = () => { clearInterval(pomTimer); isPomRunning=false; }; 
     document.getElementById('pomReset').onclick = () => setMode(pomMode, pomMode==='work'?workDuration:5); 
-    
-    stopBtn.onclick = () => {
-        alarm.pause(); alarm.currentTime = 0;
-        setMode(pomMode === 'work' ? 'break' : 'work', pomMode === 'work' ? 5 : workDuration);
-    };
-    
+    stopBtn.onclick = () => { alarm.pause(); alarm.currentTime = 0; setMode(pomMode === 'work' ? 'break' : 'work', pomMode === 'work' ? 5 : workDuration); };
     updateTimeDisplay(); 
 }
 
-function renderKanban() { ['todo', 'inprogress', 'done'].forEach(col => { document.querySelector(`.kanban-items[data-status="${col}"]`).innerHTML = kanbanTasks[col].map(i => `<div class="kb-card" draggable="true" ondragstart="drag(event, ${i.id}, '${col}')">${i.text}<div class="kb-card-actions no-print"><button class="kb-move-btn" onclick="moveKb(${i.id}, '${col}', -1)"><i class="fa-solid fa-arrow-right"></i></button><button class="kb-move-btn" style="color:var(--danger)" onclick="delKb(${i.id}, '${col}')"><i class="fa-solid fa-trash"></i></button><button class="kb-move-btn" onclick="moveKb(${i.id}, '${col}', 1)"><i class="fa-solid fa-arrow-left"></i></button></div></div>`).join(''); }); }
+// ----------------------------------------
+// برمجة المشاريع Kanban (مع التعديل والـ Multi-line)
+// ----------------------------------------
+function renderKanban() { 
+    ['todo', 'inprogress', 'done'].forEach(col => { 
+        document.querySelector(`.kanban-items[data-status="${col}"]`).innerHTML = kanbanTasks[col].map(i => `<div class="kb-card" draggable="true" ondragstart="drag(event, ${i.id}, '${col}')" onclick="editKb(${i.id}, '${col}')"><div class="kb-card-text">${i.text}</div><div class="kb-card-actions no-print"><button class="kb-move-btn" onclick="event.stopPropagation(); moveKb(${i.id}, '${col}', -1)"><i class="fa-solid fa-arrow-right"></i></button><button class="kb-move-btn" style="color:var(--danger)" onclick="event.stopPropagation(); delKb(${i.id}, '${col}')"><i class="fa-solid fa-trash"></i></button><button class="kb-move-btn" onclick="event.stopPropagation(); moveKb(${i.id}, '${col}', 1)"><i class="fa-solid fa-arrow-left"></i></button></div></div>`).join(''); 
+    }); 
+}
 window.addKanbanItem = () => { const inp = document.getElementById('newKbItem'); if(inp.value.trim()) { kanbanTasks.todo.push({id:Date.now(), text:inp.value}); inp.value = ''; saveAll(); renderKanban(); } }
 window.delKb = (id, c) => { kanbanTasks[c] = kanbanTasks[c].filter(i => i.id !== id); saveAll(); renderKanban(); }
 window.moveKb = (id, c, d) => { const cols=['todo','inprogress','done']; let idx=cols.indexOf(c), n=idx+d; if(n>=0 && n<cols.length){ let i=kanbanTasks[c].find(x=>x.id===id); kanbanTasks[c]=kanbanTasks[c].filter(x=>x.id!==id); kanbanTasks[cols[n]].push(i); saveAll(); renderKanban(); } }
@@ -331,66 +331,29 @@ window.drag = (ev, id, col) => { ev.dataTransfer.setData("id", id); ev.dataTrans
 window.allowDrop = ev => ev.preventDefault();
 window.drop = ev => { ev.preventDefault(); let tc = ev.target.closest('.kanban-items').getAttribute('data-status'), id = parseInt(ev.dataTransfer.getData("id")), sc = ev.dataTransfer.getData("col"); if(sc!==tc){ let i=kanbanTasks[sc].find(x=>x.id===id); kanbanTasks[sc]=kanbanTasks[sc].filter(x=>x.id!==id); kanbanTasks[tc].push(i); saveAll(); renderKanban(); } }
 
-function renderDashboard() {
-    let dashClearedStr = localStorage.getItem('fp_dash_cleared');
-    let activeTasks = (dashClearedStr === currentTodayStr) ? [] : tasks.filter(t => t.date === currentTodayStr);
-    let completed = activeTasks.filter(t => t.completed).length; 
-    document.getElementById('dashTasks').innerText = `${completed} / ${activeTasks.length}`;
-    let tHC = 0; let dHC = 0; habits.forEach(h => { for(let i=1; i<=30; i++) { tHC++; if(h.days[`${currentYearView}-${currentMonthView}-${i}`]) dHC++; } }); document.getElementById('dashHabits').innerText = `${tHC === 0 ? 0 : Math.round((dHC/tHC)*100)}%`;
-    let balance = finances.reduce((acc, curr) => curr.type === 'income' ? acc + Number(curr.amount) : acc - Number(curr.amount), 0); document.getElementById('dashBalance').innerText = `${balance}`;
-    let resetDate = localStorage.getItem('fp_stats_reset') || "2000-01-01";
-    const ctx = document.getElementById('tasksChart').getContext('2d'); if(myChart) myChart.destroy();
-    let labels = []; let dataDone = []; let dataPending = []; 
-    for(let i=6; i>=0; i--) { let d = new Date(); d.setDate(d.getDate() - i); let dateStr = new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().split('T')[0]; labels.push(d.toLocaleDateString(currentLang==='ar'?'ar-EG':'en-US', {weekday: 'short'})); let dayTasks = tasks.filter(t => t.date === dateStr && t.date >= resetDate); dataDone.push(dayTasks.filter(t => t.completed).length); dataPending.push(dayTasks.filter(t => !t.completed).length); }
-    let primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#25D366';
-    myChart = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [ { label: i18n[currentLang].chart_done, data: dataDone, backgroundColor: primaryColor }, { label: i18n[currentLang].chart_pend, data: dataPending, backgroundColor: '#ef4444' } ] }, options: { responsive: true, scales: { y: { beginAtZero: true, ticks: {stepSize: 1} } } } });
-}
+window.editKb = (id, col) => {
+    let k = kanbanTasks[col].find(x => x.id === id); if(!k) return;
+    document.getElementById('editKbId').value = k.id;
+    document.getElementById('editKbCol').value = col;
+    document.getElementById('editKbText').value = k.text;
+    document.getElementById('editKbModal').classList.add('show');
+};
+document.getElementById('updateKbBtn').onclick = () => {
+    let id = parseInt(document.getElementById('editKbId').value); let col = document.getElementById('editKbCol').value; let k = kanbanTasks[col].find(x => x.id === id);
+    if(k) { k.text = document.getElementById('editKbText').value; saveAll(); renderKanban(); document.getElementById('editKbModal').classList.remove('show'); }
+};
 
-function renderFinance() { 
-    const container = document.getElementById('financeContainer'); let inc = 0, exp = 0; 
-    let html = finances.sort((a,b) => new Date(b.date) - new Date(a.date)).map(f => { if(f.type === 'income') inc += Number(f.amount); else exp += Number(f.amount); let icon = f.type === 'income' ? '<i class="fa-solid fa-arrow-trend-up"></i>' : '<i class="fa-solid fa-arrow-trend-down"></i>'; return `<div class="fin-item" style="cursor:pointer;" onclick="editFin(${f.id})"><div><small>${f.date}</small><br><b>${f.desc}</b></div><div style="display:flex; align-items:center; gap:15px;"><span class="fin-amt ${f.type === 'income' ? 'inc' : 'exp'}">${icon} ${f.amount}</span><button class="icon-btn no-print" onclick="event.stopPropagation(); delFin(${f.id})"><i class="fa-solid fa-trash"></i></button></div></div>`; }).join(''); 
-    document.getElementById('totalIncome').innerText = inc; document.getElementById('totalExpense').innerText = exp; document.getElementById('netBalance').innerText = inc - exp; 
-    container.innerHTML = html || `<p style="text-align:center; color:var(--text-muted);">${currentLang==='ar'?'لا توجد معاملات.':'No transactions yet.'}</p>`; 
-}
-
+function renderDashboard() { let dashClearedStr = localStorage.getItem('fp_dash_cleared'); let activeTasks = (dashClearedStr === currentTodayStr) ? [] : tasks.filter(t => t.date === currentTodayStr); let completed = activeTasks.filter(t => t.completed).length; document.getElementById('dashTasks').innerText = `${completed} / ${activeTasks.length}`; let tHC = 0; let dHC = 0; habits.forEach(h => { for(let i=1; i<=30; i++) { tHC++; if(h.days[`${currentYearView}-${currentMonthView}-${i}`]) dHC++; } }); document.getElementById('dashHabits').innerText = `${tHC === 0 ? 0 : Math.round((dHC/tHC)*100)}%`; let balance = finances.reduce((acc, curr) => curr.type === 'income' ? acc + Number(curr.amount) : acc - Number(curr.amount), 0); document.getElementById('dashBalance').innerText = `${balance}`; let resetDate = localStorage.getItem('fp_stats_reset') || "2000-01-01"; const ctx = document.getElementById('tasksChart').getContext('2d'); if(myChart) myChart.destroy(); let labels = []; let dataDone = []; let dataPending = []; for(let i=6; i>=0; i--) { let d = new Date(); d.setDate(d.getDate() - i); let dateStr = new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().split('T')[0]; labels.push(d.toLocaleDateString(currentLang==='ar'?'ar-EG':'en-US', {weekday: 'short'})); let dayTasks = tasks.filter(t => t.date === dateStr && t.date >= resetDate); dataDone.push(dayTasks.filter(t => t.completed).length); dataPending.push(dayTasks.filter(t => !t.completed).length); } let primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#25D366'; myChart = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [ { label: i18n[currentLang].chart_done, data: dataDone, backgroundColor: primaryColor }, { label: i18n[currentLang].chart_pend, data: dataPending, backgroundColor: '#ef4444' } ] }, options: { responsive: true, scales: { y: { beginAtZero: true, ticks: {stepSize: 1} } } } }); }
+function renderFinance() { const container = document.getElementById('financeContainer'); let inc = 0, exp = 0; let html = finances.sort((a,b) => new Date(b.date) - new Date(a.date)).map(f => { if(f.type === 'income') inc += Number(f.amount); else exp += Number(f.amount); let icon = f.type === 'income' ? '<i class="fa-solid fa-arrow-trend-up"></i>' : '<i class="fa-solid fa-arrow-trend-down"></i>'; return `<div class="fin-item" style="cursor:pointer;" onclick="editFin(${f.id})"><div><small>${f.date}</small><br><b>${f.desc}</b></div><div style="display:flex; align-items:center; gap:15px;"><span class="fin-amt ${f.type === 'income' ? 'inc' : 'exp'}">${icon} ${f.amount}</span><button class="icon-btn no-print" onclick="event.stopPropagation(); delFin(${f.id})"><i class="fa-solid fa-trash"></i></button></div></div>`; }).join(''); document.getElementById('totalIncome').innerText = inc; document.getElementById('totalExpense').innerText = exp; document.getElementById('netBalance').innerText = inc - exp; container.innerHTML = html || `<p style="text-align:center; color:var(--text-muted);">${currentLang==='ar'?'لا توجد معاملات.':'No transactions yet.'}</p>`; }
 document.getElementById('saveFinBtn').onclick = () => { let desc = document.getElementById('finDesc').value; let amt = document.getElementById('finAmount').value; if(!desc || !amt) return; finances.push({ id: Date.now(), desc: desc, amount: amt, type: document.getElementById('finType').value, date: document.getElementById('finDate').value }); saveAll(); document.getElementById('financeModal').classList.remove('show'); renderFinance(); renderDashboard(); };
-
-window.editFin = (id) => {
-    let f = finances.find(x => x.id === id); if(!f) return;
-    document.getElementById('editFinId').value = f.id; document.getElementById('editFinDesc').value = f.desc; document.getElementById('editFinAmount').value = f.amount; document.getElementById('editFinType').value = f.type; document.getElementById('editFinDate').value = f.date;
-    document.getElementById('editFinModal').classList.add('show');
-};
-
-document.getElementById('updateFinBtn').onclick = () => {
-    let id = parseInt(document.getElementById('editFinId').value); let desc = document.getElementById('editFinDesc').value; let amt = document.getElementById('editFinAmount').value;
-    if(!desc || !amt) return; let f = finances.find(x => x.id === id);
-    if(f) { f.desc = desc; f.amount = amt; f.type = document.getElementById('editFinType').value; f.date = document.getElementById('editFinDate').value; saveAll(); renderFinance(); renderDashboard(); document.getElementById('editFinModal').classList.remove('show'); }
-};
-
+window.editFin = (id) => { let f = finances.find(x => x.id === id); if(!f) return; document.getElementById('editFinId').value = f.id; document.getElementById('editFinDesc').value = f.desc; document.getElementById('editFinAmount').value = f.amount; document.getElementById('editFinType').value = f.type; document.getElementById('editFinDate').value = f.date; document.getElementById('editFinModal').classList.add('show'); };
+document.getElementById('updateFinBtn').onclick = () => { let id = parseInt(document.getElementById('editFinId').value); let desc = document.getElementById('editFinDesc').value; let amt = document.getElementById('editFinAmount').value; if(!desc || !amt) return; let f = finances.find(x => x.id === id); if(f) { f.desc = desc; f.amount = amt; f.type = document.getElementById('editFinType').value; f.date = document.getElementById('editFinDate').value; saveAll(); renderFinance(); renderDashboard(); document.getElementById('editFinModal').classList.remove('show'); } };
 window.delFin = id => { finances = finances.filter(f => f.id !== id); saveAll(); renderFinance(); renderDashboard(); }
-
-function renderLibrary() { 
-    const container = document.getElementById('libraryContainer'); 
-    container.innerHTML = library.map(l => `<div class="lib-card"><button class="icon-btn no-print" style="position:absolute; top:10px; left:10px; color:var(--danger);" onclick="delLib(${l.id})"><i class="fa-solid fa-trash"></i></button><span class="lib-cat">${l.category}</span><h3>${l.title}</h3><div class="render-area">${linkify(l.content)}</div></div>`).join('') || `<p style="text-align:center; color:var(--text-muted); grid-column: 1/-1;">${currentLang==='ar'?'أضف مرجعك الأول.':'Add your first reference.'}</p>`; 
-}
-
-document.getElementById('saveLibBtn').onclick = () => { let t = document.getElementById('libTitle').value, c = document.getElementById('libCategory').value, text = document.getElementById('libContent').value; if(!t) return; library.push({ id: Date.now(), title: t, category: c || 'عام', content: text }); saveAll(); document.getElementById('libraryModal').classList.remove('show'); renderLibrary(); };
-window.delLib = id => { library = library.filter(l => l.id !== id); saveAll(); renderLibrary(); }
-
-function renderHabits() { 
-    let dim = new Date(currentYearView, currentMonthView + 1, 0).getDate(); 
-    let habitText = currentLang === 'ar' ? 'العادة' : 'Habit';
-    let html = `<table class="habit-table"><thead><tr><th>${habitText}</th>`; 
-    for(let i=1; i<=dim; i++) html += `<th>${i}</th>`; html += `</tr></thead><tbody>`; 
-    habits.forEach(h => { html += `<tr><td class="habit-name"><button class="icon-btn no-print" style="color:red;" onclick="delHabit(${h.id})">x</button> ${h.name}</td>`; for(let i=1; i<=dim; i++) { let k = `${currentYearView}-${currentMonthView}-${i}`; html += `<td><div class="habit-check ${h.days[k]?'done':''}" onclick="toggleHabit(${h.id}, '${k}')">✓</div></td>`; } html += `</tr>`; }); 
-    document.getElementById('habitsContainer').innerHTML = html + `</tbody></table>`; 
-}
-
+function renderHabits() { let dim = new Date(currentYearView, currentMonthView + 1, 0).getDate(); let habitText = currentLang === 'ar' ? 'العادة' : 'Habit'; let html = `<table class="habit-table"><thead><tr><th>${habitText}</th>`; for(let i=1; i<=dim; i++) html += `<th>${i}</th>`; html += `</tr></thead><tbody>`; habits.forEach(h => { html += `<tr><td class="habit-name"><button class="icon-btn no-print" style="color:red;" onclick="delHabit(${h.id})">x</button> ${h.name}</td>`; for(let i=1; i<=dim; i++) { let k = `${currentYearView}-${currentMonthView}-${i}`; html += `<td><div class="habit-check ${h.days[k]?'done':''}" onclick="toggleHabit(${h.id}, '${k}')">✓</div></td>`; } html += `</tr>`; }); document.getElementById('habitsContainer').innerHTML = html + `</tbody></table>`; }
 window.addNewHabit = () => { const inp = document.getElementById('newHabitInput'); if(inp.value.trim()){ habits.push({id:Date.now(), name:inp.value, days:{}}); saveAll(); inp.value=''; renderHabits(); renderDashboard(); } }
 window.toggleHabit = (id, k) => { let h = habits.find(x=>x.id===id); h.days[k] = !h.days[k]; saveAll(); renderHabits(); renderDashboard(); }
 window.delHabit = id => { habits = habits.filter(h=>h.id!==id); saveAll(); renderHabits(); renderDashboard(); }
-
 function initProfile() { document.getElementById('profileName').value = profile.name; document.getElementById('saveProfileBtn').onclick = () => { profile.name = document.getElementById('profileName').value; saveAll(); alert(currentLang === 'ar' ? "تم الحفظ!" : "Saved!"); }; }
 function initBackup() { document.getElementById('backupBtn').onclick = () => { let d = {}; for(let i=0;i<localStorage.length;i++) d[localStorage.key(i)] = localStorage.getItem(localStorage.key(i)); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(d)], {type:"application/json"})); a.download = `Backup.json`; a.click(); }; document.getElementById('restoreFile').onchange = e => { const r = new FileReader(); r.onload = ev => { const d = JSON.parse(ev.target.result); for(let k in d) localStorage.setItem(k, d[k]); location.reload(); }; r.readAsText(e.target.files[0]); }; }
-function initModals() { document.querySelectorAll('.close-modal').forEach(b => b.onclick = () => { document.querySelectorAll('.modal').forEach(m => m.classList.remove('show')); stopDictation(); }); }
+function initModals() { document.querySelectorAll('.close-modal').forEach(b => b.onclick = () => { document.querySelectorAll('.modal').forEach(m => m.classList.remove('show')); stopContinuousDictation(); }); }
 function initTheme() { if(localStorage.getItem('dark_mode')==='true') document.body.classList.add('dark-mode'); document.getElementById('themeToggle').onclick = () => { document.body.classList.toggle('dark-mode'); localStorage.setItem('dark_mode', document.body.classList.contains('dark-mode')); }; }
