@@ -57,7 +57,6 @@
         </aside>
 
         <main class="content" id="printArea">
-            
             <div id="dashboardView" class="view-section active">
                 <div class="content-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                     <h2 data-i18n="title_dash">لوحة التحكم والإحصائيات</h2>
@@ -78,13 +77,13 @@
             </div>
 
             <div id="financeView" class="view-section">
-                <div class="content-header" style="display: flex; justify-content: space-between;"><h2 data-i18n="title_finance">المتتبع المالي</h2><button class="btn btn-primary no-print" onclick="document.getElementById('financeModal').classList.add('show')"><i class="fa-solid fa-plus"></i> <span data-i18n="btn_add_trans">معاملة</span></button></div>
+                <div class="content-header" style="display: flex; justify-content: space-between;"><h2 data-i18n="title_finance">المتتبع المالي</h2><button class="btn btn-primary no-print" onclick="openFinModal()"><i class="fa-solid fa-plus"></i> <span data-i18n="btn_add_trans">معاملة</span></button></div>
                 <div class="finance-summary"><div class="fin-box fin-income"><span data-i18n="fin_inc">الدخل</span><h3 id="totalIncome">0</h3></div><div class="fin-box fin-expense"><span data-i18n="fin_exp">المصروفات</span><h3 id="totalExpense">0</h3></div><div class="fin-box fin-balance"><span data-i18n="fin_bal">الرصيد</span><h3 id="netBalance">0</h3></div></div>
                 <div class="finance-list" id="financeContainer"></div>
             </div>
 
             <div id="libraryView" class="view-section">
-                <div class="content-header" style="display: flex; justify-content: space-between;"><h2 data-i18n="title_lib">المراجع والأصول</h2><button class="btn btn-primary no-print" onclick="document.getElementById('libraryModal').classList.add('show')"><i class="fa-solid fa-plus"></i> <span data-i18n="btn_add_ref">مرجع</span></button></div>
+                <div class="content-header" style="display: flex; justify-content: space-between;"><h2 data-i18n="title_lib">المراجع والأصول</h2><button class="btn btn-primary no-print" onclick="openLibModal()"><i class="fa-solid fa-plus"></i> <span data-i18n="btn_add_ref">مرجع</span></button></div>
                 <div class="library-grid" id="libraryContainer"></div>
             </div>
 
@@ -103,7 +102,7 @@
                         <h2 data-i18n="title_today">جدول اليوم</h2>
                         <input type="date" id="viewDailyDate" class="btn btn-secondary no-print" style="padding:5px 10px; font-family: inherit;">
                     </div>
-                    <button class="btn btn-primary no-print" id="openTaskBtnMobile"><i class="fa-solid fa-plus"></i> <span data-i18n="btn_add">إضافة</span></button>
+                    <button class="btn btn-primary no-print" onclick="openTaskModal()"><i class="fa-solid fa-plus"></i> <span data-i18n="btn_add">إضافة</span></button>
                 </div>
                 <div id="plannerContainer" class="planner-container"></div>
             </div>
@@ -118,8 +117,14 @@
                         <button id="pomPlus" class="icon-btn" style="background:var(--bg-color); border-radius:50%; width:35px; height:35px;">+</button>
                     </div>
                     <div class="pomodoro-timer" id="timerDisplay">25:00</div>
-                    <div class="pomodoro-controls"><button id="pomStart" class="btn btn-primary"><i class="fa-solid fa-play"></i> <span data-i18n="btn_start">ابدأ</span></button><button id="pomPause" class="btn btn-secondary"><i class="fa-solid fa-pause"></i> <span data-i18n="btn_pause">إيقاف</span></button><button id="pomReset" class="btn btn-secondary"><i class="fa-solid fa-rotate-right"></i> <span data-i18n="btn_reset">إعادة</span></button></div>
+                    <div class="pomodoro-controls">
+                        <button id="pomStart" class="btn btn-primary"><i class="fa-solid fa-play"></i> <span data-i18n="btn_start">ابدأ</span></button>
+                        <button id="pomPause" class="btn btn-secondary"><i class="fa-solid fa-pause"></i> <span data-i18n="btn_pause">إيقاف مؤقت</span></button>
+                        <button id="pomReset" class="btn btn-secondary"><i class="fa-solid fa-rotate-right"></i></button>
+                        <button id="stopAlarmBtn" class="btn" style="background: var(--danger); color: white; display: none; animation: shake 0.5s infinite;"><i class="fa-solid fa-bell-slash"></i> <span data-i18n="btn_stop_alarm">إيقاف الرنين</span></button>
+                    </div>
                 </div>
+                <audio id="pomAlarmSound" loop preload="auto"><source src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" type="audio/mpeg"></audio>
             </div>
 
             <div id="kanbanView" class="view-section">
@@ -143,7 +148,7 @@
             </div>
 
             <div id="notesView" class="view-section">
-                <div class="content-header" style="display: flex; justify-content: space-between;"><h2 data-i18n="title_notes">الملاحظات</h2><button class="btn btn-primary no-print" onclick="document.getElementById('noteModal').classList.add('show')"><i class="fa-solid fa-plus"></i> <span data-i18n="btn_add_note">ملاحظة</span></button></div>
+                <div class="content-header" style="display: flex; justify-content: space-between;"><h2 data-i18n="title_notes">الملاحظات</h2><button class="btn btn-primary no-print" onclick="openNoteModal()"><i class="fa-solid fa-plus"></i> <span data-i18n="btn_add_note">ملاحظة</span></button></div>
                 <div id="notesContainer" class="notes-grid"></div>
             </div>
 
@@ -154,7 +159,6 @@
                     <button id="saveProfileBtn" class="btn btn-primary" style="width: 100%;"><span data-i18n="btn_save_local">حفظ البيانات محلياً</span></button>
                     
                     <hr style="margin: 20px 0;">
-                    
                     <h3 data-i18n="title_appearance">المظهر والألوان 🎨</h3>
                     <div class="theme-options" style="display: flex; gap: 10px; margin-top: 10px; margin-bottom: 20px;">
                         <button class="color-btn" data-theme="theme-green" style="background: #25D366;" title="Green"></button>
@@ -181,96 +185,29 @@
         </main>
     </div>
 
-    <div id="updateToast" class="update-toast">
-        <span>✨ يوجد تحديث جديد للتطبيق!</span>
-        <button onclick="location.reload(true)" class="btn btn-primary" style="padding: 5px 10px; font-size: 0.85rem;">تحديث الآن</button>
-    </div>
-
-    <button class="fab no-print" id="openTaskModalBtn" style="display: none;"><i class="fa-solid fa-plus"></i></button>
-
-    <div id="taskModal" class="modal"><div class="modal-content"><h3 data-i18n="btn_add">إضافة مهمة</h3><input type="text" id="taskTitle" placeholder="العنوان..." required><div class="input-group"><input type="date" id="taskDate"><select id="taskHour"></select></div><div class="modal-actions"><button class="btn btn-secondary close-modal">إلغاء</button><button id="saveTaskBtn" class="btn btn-primary">حفظ</button></div></div></div>
+    <div id="taskModal" class="modal"><div class="modal-content"><h3 data-i18n="btn_add">إضافة مهمة</h3><input type="text" id="taskTitle" placeholder="العنوان..." required><div class="input-group"><input type="date" id="taskDate"><select id="taskHour"></select></div><div class="modal-actions"><button class="btn btn-secondary close-modal" data-i18n="btn_cancel">إلغاء</button><button id="saveTaskBtn" class="btn btn-primary" data-i18n="btn_save">حفظ</button></div></div></div>
     
-    <div id="editTaskModal" class="modal">
-        <div class="modal-content">
-            <h3 data-i18n="btn_edit_task">تعديل المهمة</h3>
-            <input type="hidden" id="editTaskId">
-            <input type="text" id="editTaskTitle" required>
-            <div class="input-group">
-                <input type="date" id="editTaskDate">
-                <select id="editTaskHour"></select>
-            </div>
-            <div class="modal-actions">
-                <button class="btn btn-secondary close-modal">إلغاء</button>
-                <button id="updateTaskBtn" class="btn btn-primary" data-i18n="btn_update">تحديث</button>
-            </div>
-        </div>
-    </div>
+    <div id="editTaskModal" class="modal"><div class="modal-content"><h3 data-i18n="btn_edit_task">تعديل المهمة</h3><input type="hidden" id="editTaskId"><input type="text" id="editTaskTitle" required><div class="input-group"><input type="date" id="editTaskDate"><select id="editTaskHour"></select></div><div class="modal-actions"><button class="btn btn-secondary close-modal" data-i18n="btn_cancel">إلغاء</button><button id="updateTaskBtn" class="btn btn-primary" data-i18n="btn_update">تحديث</button></div></div></div>
 
-    <div id="noteModal" class="modal">
-        <div class="modal-content">
-            <h3 data-i18n="btn_add_note">إضافة ملاحظة</h3>
-            <input type="text" id="noteTitle" placeholder="العنوان..." required>
-            <input type="date" id="noteDate" required>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; margin-bottom: 5px; background: rgba(37, 211, 102, 0.1); padding: 8px; border-radius: 6px;">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <span style="font-size:0.85rem; color:var(--text-main); font-weight:600;" id="dictateStatusNote" data-i18n="lib_dictate_hint">المحتوى</span>
-                    <select id="dictateLangNote" class="no-print" style="padding: 2px 5px; font-size: 0.8rem; border-radius: 4px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main);">
-                        <option value="ar-EG">عربي</option>
-                        <option value="en-US">English</option>
-                    </select>
-                </div>
-                <button type="button" id="dictateNoteBtn" class="icon-btn" style="color:var(--primary); font-size: 1.2rem;" title="تحدث ليتم الكتابة تلقائياً"><i class="fa-solid fa-microphone"></i></button>
-            </div>
-            <textarea id="noteContent" rows="5" placeholder="..." style="margin-top:0;"></textarea>
-            <div class="modal-actions"><button class="btn btn-secondary close-modal">إلغاء</button><button id="saveNoteBtn" class="btn btn-primary">حفظ</button></div>
-        </div>
-    </div>
+    <div id="noteModal" class="modal"><div class="modal-content"><h3 data-i18n="btn_add_note">إضافة ملاحظة</h3><input type="text" id="noteTitle" placeholder="العنوان..." required><input type="date" id="noteDate" required><div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; margin-bottom: 5px; background: rgba(37, 211, 102, 0.1); padding: 8px; border-radius: 6px;"><div style="display: flex; align-items: center; gap: 8px;"><span style="font-size:0.85rem; color:var(--text-main); font-weight:600;" id="dictateStatusNote" data-i18n="lib_dictate_hint">المحتوى</span><select id="dictateLangNote" class="no-print" style="padding: 2px 5px; font-size: 0.8rem; border-radius: 4px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main);"><option value="ar-EG">عربي</option><option value="en-US">English</option></select></div><button type="button" id="dictateNoteBtn" class="icon-btn" style="color:var(--primary); font-size: 1.2rem;" title="تحدث ليتم الكتابة تلقائياً"><i class="fa-solid fa-microphone"></i></button></div><textarea id="noteContent" rows="5" placeholder="..." style="margin-top:0;"></textarea><div class="modal-actions"><button class="btn btn-secondary close-modal" data-i18n="btn_cancel">إلغاء</button><button id="saveNoteBtn" class="btn btn-primary" data-i18n="btn_save">حفظ</button></div></div></div>
 
-    <div id="financeModal" class="modal"><div class="modal-content"><h3>معاملة مالية</h3><input type="text" id="finDesc" placeholder="الوصف" required><div class="input-group"><input type="number" id="finAmount" placeholder="المبلغ" required><select id="finType"><option value="income">إيراد (+)</option><option value="expense">مصروف (-)</option></select></div><input type="date" id="finDate" style="margin-top:10px;"><div class="modal-actions"><button class="btn btn-secondary close-modal">إلغاء</button><button id="saveFinBtn" class="btn btn-primary">حفظ</button></div></div></div>
+    <div id="financeModal" class="modal"><div class="modal-content"><h3 data-i18n="btn_add_trans">إضافة معاملة</h3><input type="text" id="finDesc" placeholder="الوصف" required><div class="input-group"><input type="number" id="finAmount" placeholder="المبلغ" required><select id="finType"><option value="income">إيراد (+)</option><option value="expense">مصروف (-)</option></select></div><input type="date" id="finDate" style="margin-top:10px;"><div class="modal-actions"><button class="btn btn-secondary close-modal" data-i18n="btn_cancel">إلغاء</button><button id="saveFinBtn" class="btn btn-primary" data-i18n="btn_save">حفظ</button></div></div></div>
     
-    <div id="libraryModal" class="modal">
-        <div class="modal-content">
-            <h3 data-i18n="btn_add_ref">إضافة مرجع</h3>
-            <input type="text" id="libTitle" placeholder="العنوان" required>
-            <input type="text" id="libCategory" placeholder="التصنيف" required style="margin-top:10px;">
-            
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; margin-bottom: 5px; background: rgba(37, 211, 102, 0.1); padding: 8px; border-radius: 6px;">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <span style="font-size:0.85rem; color:var(--text-main); font-weight:600;" id="dictateStatusLib" data-i18n="lib_dictate_hint">المحتوى</span>
-                    <select id="dictateLangLib" class="no-print" style="padding: 2px 5px; font-size: 0.8rem; border-radius: 4px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main);">
-                        <option value="ar-EG">عربي</option>
-                        <option value="en-US">English</option>
-                    </select>
-                </div>
-                <button type="button" id="dictateLibBtn" class="icon-btn" style="color:var(--primary); font-size: 1.2rem;" title="تحدث ليتم الكتابة تلقائياً"><i class="fa-solid fa-microphone"></i></button>
-            </div>
-            
-            <textarea id="libContent" rows="5" placeholder="..." style="margin-top:0;"></textarea>
-            <div class="modal-actions"><button class="btn btn-secondary close-modal">إلغاء</button><button id="saveLibBtn" class="btn btn-primary">حفظ</button></div>
-        </div>
-    </div>
+    <div id="editFinModal" class="modal"><div class="modal-content"><h3 data-i18n="btn_edit_trans">تعديل المعاملة</h3><input type="hidden" id="editFinId"><input type="text" id="editFinDesc" required><div class="input-group"><input type="number" id="editFinAmount" required><select id="editFinType"><option value="income">إيراد (+)</option><option value="expense">مصروف (-)</option></select></div><input type="date" id="editFinDate" style="margin-top:10px;"><div class="modal-actions"><button class="btn btn-secondary close-modal" data-i18n="btn_cancel">إلغاء</button><button id="updateFinBtn" class="btn btn-primary" data-i18n="btn_update">تحديث</button></div></div></div>
+
+    <div id="libraryModal" class="modal"><div class="modal-content"><h3 data-i18n="btn_add_ref">إضافة مرجع</h3><input type="text" id="libTitle" placeholder="العنوان" required><input type="text" id="libCategory" placeholder="التصنيف" required style="margin-top:10px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; margin-bottom: 5px; background: rgba(37, 211, 102, 0.1); padding: 8px; border-radius: 6px;"><div style="display: flex; align-items: center; gap: 8px;"><span style="font-size:0.85rem; color:var(--text-main); font-weight:600;" id="dictateStatusLib" data-i18n="lib_dictate_hint">المحتوى</span><select id="dictateLangLib" class="no-print" style="padding: 2px 5px; font-size: 0.8rem; border-radius: 4px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main);"><option value="ar-EG">عربي</option><option value="en-US">English</option></select></div><button type="button" id="dictateLibBtn" class="icon-btn" style="color:var(--primary); font-size: 1.2rem;" title="تحدث ليتم الكتابة تلقائياً"><i class="fa-solid fa-microphone"></i></button></div><textarea id="libContent" rows="5" placeholder="..." style="margin-top:0;"></textarea><div class="modal-actions"><button class="btn btn-secondary close-modal" data-i18n="btn_cancel">إلغاء</button><button id="saveLibBtn" class="btn btn-primary" data-i18n="btn_save">حفظ</button></div></div></div>
 
     <div id="authModal" class="modal">
         <div class="modal-content">
-            <h3>تسجيل الدخول للمزامنة</h3>
+            <h3 data-i18n="title_login">تسجيل الدخول للمزامنة</h3>
             <input type="email" id="authEmail" placeholder="البريد الإلكتروني" required>
             <input type="password" id="authPassword" placeholder="كلمة المرور (6 حروف على الأقل)" required style="margin-top:10px;">
-            <div style="text-align: right; margin-top: 8px;">
-                <a href="#" onclick="resetPassword()" style="font-size: 0.85rem; color: var(--primary); text-decoration: none; font-weight: bold;">هل نسيت كلمة المرور؟</a>
-            </div>
+            <div style="text-align: right; margin-top: 8px;"><a href="#" onclick="resetPassword()" style="font-size: 0.85rem; color: var(--primary); text-decoration: none; font-weight: bold;">هل نسيت كلمة المرور؟</a></div>
             <p id="authError" style="color:var(--danger); font-size:0.85rem; margin-top:5px;"></p>
-            <div class="modal-actions" style="margin-top:15px;">
-                <button class="btn btn-secondary close-modal">إلغاء</button>
-                <button class="btn btn-primary" onclick="handleAuth('login')">دخول</button>
-                <button class="btn btn-secondary" onclick="handleAuth('signup')">حساب جديد</button>
-            </div>
+            <div class="modal-actions" style="margin-top:15px;"><button class="btn btn-secondary close-modal" data-i18n="btn_cancel">إلغاء</button><button class="btn btn-primary" onclick="handleAuth('login')">دخول</button><button class="btn btn-secondary" onclick="handleAuth('signup')">حساب جديد</button></div>
         </div>
     </div>
 
     <script src="script.js"></script>
-    <script>
-        MobileDragDrop.polyfill({ dragImageTranslateOverride: MobileDragDrop.scrollBehaviourDragImageTranslateOverride });
-        window.addEventListener('touchmove', function() {}, {passive: false});
-    </script>
 </body>
 </html>
