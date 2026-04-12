@@ -141,12 +141,11 @@ window.logoutCloud = () => { auth.signOut().then(() => { localStorage.clear(); l
 function linkify(text) { const urlRegex = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%Sub=~_|])/ig; const phoneRegex = /(\b\d{10,14}\b)/g; return text.replace(urlRegex, url => `<a href="${url}" target="_blank">${url}</a>`).replace(phoneRegex, phone => `<a href="tel:${phone}">${phone}</a>`); }
 
 // ----------------------------------------
-// برمجة الذكاء الاصطناعي (مُحسّن للموبايل لمنع التكرار والسقوط)
+// برمجة الذكاء الاصطناعي (مُحسّن للموبايل - الإصدار النهائي لمنع التكرار)
 // ----------------------------------------
 let dictationRecognition = null; let isDictating = false; 
 let currentStartBtn = null, currentStopBtn = null, currentStatus = null, currentInput = null;
-let finalTranscript = '';
-let baseText = '';
+let baseText = ''; // لحفظ النص الموجود مسبقاً
 
 window.startContinuousDictation = (inputId, langId, statusId, startBtnId, stopBtnId) => {
     if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) { 
@@ -167,9 +166,8 @@ window.startContinuousDictation = (inputId, langId, statusId, startBtnId, stopBt
     dictationRecognition.interimResults = true; 
     dictationRecognition.lang = document.getElementById(langId).value;
 
-    // السر هنا: حفظ النص القديم وتصفير النص الجديد قبل بدء جلسة الاستماع
+    // 1. نحفظ ما كان مكتوباً في المربع قبل بدء التسجيل كـ "أساس"
     baseText = currentInput.value.trim();
-    finalTranscript = '';
 
     dictationRecognition.onstart = () => { 
         isDictating = true; 
@@ -179,23 +177,21 @@ window.startContinuousDictation = (inputId, langId, statusId, startBtnId, stopBt
     };
 
     dictationRecognition.onresult = (event) => { 
-        let interimTranscript = '';
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-            if (event.results[i].isFinal) {
-                finalTranscript += event.results[i][0].transcript + ' ';
-            } else {
-                interimTranscript += event.results[i][0].transcript;
-            }
+        let currentSessionTranscript = '';
+        
+        // 2. السر هنا: نقوم بتجميع كل الكلام المسموع في الجلسة الحالية من الصفر في كل مرة
+        for (let i = 0; i < event.results.length; ++i) {
+            currentSessionTranscript += event.results[i][0].transcript;
         }
-        // الدمج الآمن: النص القديم + النص النهائي المؤكد + التخمين المؤقت
-        currentInput.value = (baseText ? baseText + ' ' : '') + finalTranscript + interimTranscript;
+        
+        // 3. ندمج النص الأساسي القديم مع الجملة الحالية النظيفة
+        currentInput.value = (baseText ? baseText + ' ' : '') + currentSessionTranscript;
     };
 
     dictationRecognition.onend = () => { 
         if(isDictating) { 
-            // إذا فصل الموبايل المايك (توقف مؤقت)، نحدث النص الأساسي ونعيد التشغيل بصمت
+            // إذا توقف المايك فجأة (بسبب صمت طويل)، نحدث النص الأساسي ونعيد فتح المايك
             baseText = currentInput.value.trim();
-            finalTranscript = '';
             try { dictationRecognition.start(); } catch(e) {} 
         } 
         else {
