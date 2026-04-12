@@ -286,17 +286,27 @@
         </div>
     </div>
 
-    <div id="authModal" class="modal">
-        <div class="modal-content">
-            <h3 data-i18n="title_login">تسجيل الدخول للمزامنة</h3>
-            <input type="email" id="authEmail" placeholder="البريد الإلكتروني" required>
-            <input type="password" id="authPassword" placeholder="كلمة المرور (6 حروف على الأقل)" required style="margin-top:10px;">
-            <div style="text-align: right; margin-top: 8px;"><a href="#" onclick="resetPassword()" style="font-size: 0.85rem; color: var(--primary); text-decoration: none; font-weight: bold;">هل نسيت كلمة المرور؟</a></div>
-            <p id="authError" style="color:var(--danger); font-size:0.85rem; margin-top:5px;"></p>
-            <div class="modal-actions" style="margin-top:15px;"><button class="btn btn-secondary close-modal" data-i18n="btn_cancel">إلغاء</button><button class="btn btn-primary" onclick="handleAuth('login')">دخول</button><button class="btn btn-secondary" onclick="handleAuth('signup')">حساب جديد</button></div>
+  <div id="authModal" class="modal">
+    <div class="modal-content">
+        <h3 data-i18n="title_login">تسجيل الدخول للمزامنة</h3>
+        <input type="email" id="authEmail" placeholder="البريد الإلكتروني" required>
+        
+        <div style="position: relative; margin-top: 10px;">
+            <input type="password" id="authPassword" placeholder="كلمة المرور (6 حروف على الأقل)" required style="margin-top: 0; width: 100%; padding-left: 40px; box-sizing: border-box;">
+            <button type="button" id="togglePasswordBtn" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.1rem; padding: 0; outline: none; z-index: 10;">
+                <i class="fa-solid fa-eye" id="togglePasswordIcon"></i>
+            </button>
+        </div>
+        <div style="text-align: right; margin-top: 8px;"><a href="#" onclick="resetPassword()" style="font-size: 0.85rem; color: var(--primary); text-decoration: none; font-weight: bold;">هل نسيت كلمة المرور؟</a></div>
+        <p id="authError" style="color:var(--danger); font-size:0.85rem; margin-top:5px;"></p>
+        <div class="modal-actions" style="margin-top:15px;">
+            <button class="btn btn-secondary close-modal" data-i18n="btn_cancel">إلغاء</button>
+            <button class="btn btn-primary" onclick="handleAuth('login')">دخول</button>
+            <button class="btn btn-secondary" onclick="handleAuth('signup')">حساب جديد</button>
         </div>
     </div>
+</div>
 
-    <script src="script.js"></script>
+<script src="script.js"></script>
 </body>
 </html>

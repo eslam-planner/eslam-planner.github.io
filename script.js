@@ -141,14 +141,20 @@ window.logoutCloud = () => { auth.signOut().then(() => { localStorage.clear(); l
 function linkify(text) { const urlRegex = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%Sub=~_|])/ig; const phoneRegex = /(\b\d{10,14}\b)/g; return text.replace(urlRegex, url => `<a href="${url}" target="_blank">${url}</a>`).replace(phoneRegex, phone => `<a href="tel:${phone}">${phone}</a>`); }
 
 // ----------------------------------------
-// برمجة الذكاء الاصطناعي (مستمر ولا يقطع الكلام)
+// برمجة الذكاء الاصطناعي (مُحسّن للموبايل لمنع التكرار والسقوط)
 // ----------------------------------------
 let dictationRecognition = null; let isDictating = false; 
 let currentStartBtn = null, currentStopBtn = null, currentStatus = null, currentInput = null;
+let finalTranscript = '';
+let baseText = '';
 
 window.startContinuousDictation = (inputId, langId, statusId, startBtnId, stopBtnId) => {
-    if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) { alert(currentLang === 'ar' ? 'المتصفح لا يدعم تحويل الصوت لنص.' : 'Speech to text not supported.'); return; }
-    if(isDictating) stopContinuousDictation(); // إيقاف أي تسجيل قديم
+    if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) { 
+        alert(currentLang === 'ar' ? 'المتصفح لا يدعم تحويل الصوت لنص.' : 'Speech to text not supported.'); 
+        return; 
+    }
+    
+    if(isDictating) stopContinuousDictation(); 
     
     currentStartBtn = document.getElementById(startBtnId);
     currentStopBtn = document.getElementById(stopBtnId);
@@ -157,11 +163,13 @@ window.startContinuousDictation = (inputId, langId, statusId, startBtnId, stopBt
     
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition; 
     dictationRecognition = new SpeechRecognition(); 
-    dictationRecognition.continuous = true; // السر هنا: استمرار الاستماع
-    dictationRecognition.interimResults = true; // إظهار النتائج الفورية
+    dictationRecognition.continuous = true; 
+    dictationRecognition.interimResults = true; 
     dictationRecognition.lang = document.getElementById(langId).value;
 
-    let finalTranscript = '';
+    // السر هنا: حفظ النص القديم وتصفير النص الجديد قبل بدء جلسة الاستماع
+    baseText = currentInput.value.trim();
+    finalTranscript = '';
 
     dictationRecognition.onstart = () => { 
         isDictating = true; 
@@ -175,17 +183,21 @@ window.startContinuousDictation = (inputId, langId, statusId, startBtnId, stopBt
         for (let i = event.resultIndex; i < event.results.length; ++i) {
             if (event.results[i].isFinal) {
                 finalTranscript += event.results[i][0].transcript + ' ';
-                // إضافة النص فوراً للمربع
-                currentInput.value = currentInput.value + (currentInput.value.endsWith(' ') || currentInput.value === '' ? '' : ' ') + event.results[i][0].transcript;
             } else {
                 interimTranscript += event.results[i][0].transcript;
             }
         }
+        // الدمج الآمن: النص القديم + النص النهائي المؤكد + التخمين المؤقت
+        currentInput.value = (baseText ? baseText + ' ' : '') + finalTranscript + interimTranscript;
     };
 
     dictationRecognition.onend = () => { 
-        // إذا توقف المتصفح تلقائياً ولم يضغط المستخدم إيقاف، نعيد تشغيله
-        if(isDictating) { try { dictationRecognition.start(); } catch(e) {} } 
+        if(isDictating) { 
+            // إذا فصل الموبايل المايك (توقف مؤقت)، نحدث النص الأساسي ونعيد التشغيل بصمت
+            baseText = currentInput.value.trim();
+            finalTranscript = '';
+            try { dictationRecognition.start(); } catch(e) {} 
+        } 
         else {
             currentStartBtn.style.display = 'inline-flex'; currentStopBtn.style.display = 'none';
             currentStatus.innerText = currentLang === 'ar' ? 'المحتوى' : 'Content'; 
@@ -203,6 +215,20 @@ window.stopContinuousDictation = () => {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
+    
+    // كود إظهار وإخفاء كلمة المرور
+    const togglePasswordBtn = document.getElementById('togglePasswordBtn');
+    const authPassword = document.getElementById('authPassword');
+    const togglePasswordIcon = document.getElementById('togglePasswordIcon');
+
+    if (togglePasswordBtn) {
+        togglePasswordBtn.addEventListener('click', () => {
+            const type = authPassword.getAttribute('type') === 'password' ? 'text' : 'password';
+            authPassword.setAttribute('type', type);
+            togglePasswordIcon.classList.toggle('fa-eye');
+            togglePasswordIcon.classList.toggle('fa-eye-slash');
+        });
+    }
     initTheme(); initColorTheme(); initModals(); initProfile(); initBackup(); setLanguage(currentLang);
     
     document.getElementById('langToggleBtn').onclick = () => { setLanguage(currentLang === 'ar' ? 'en' : 'ar'); };
