@@ -155,15 +155,16 @@ window.logoutCloud = () => { auth.signOut().then(() => { localStorage.clear(); l
 function linkify(text) { const urlRegex = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%Sub=~_|])/ig; const phoneRegex = /(\b\d{10,14}\b)/g; return text.replace(urlRegex, url => `<a href="${url}" target="_blank">${url}</a>`).replace(phoneRegex, phone => `<a href="tel:${phone}">${phone}</a>`); }
 
 // ----------------------------------------
-// برمجة الذكاء الاصطناعي (الحل الجذري لمشكلة تكرار أندرويد)
+// برمجة الذكاء الاصطناعي (الحل الشامل والمستقر لـ Android و iOS)
 // ----------------------------------------
 let dictationRecognition = null; let isDictating = false; 
 let currentStartBtn = null, currentStopBtn = null, currentStatus = null, currentInput = null;
-let baseText = ''; 
 
 window.startContinuousDictation = (inputId, langId, statusId, startBtnId, stopBtnId) => {
-    if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) { 
-        alert(currentLang === 'ar' ? 'المتصفح لا يدعم تحويل الصوت لنص.' : 'Speech to text not supported.'); 
+    // 1. التحقق من دعم المتصفح (مهم جداً للآيفون)
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) { 
+        alert(currentLang === 'ar' ? 'متصفحك لا يدعم الإملاء الصوتي. جرب متصفح كروم أو سفاري حديث.' : 'Speech to text not supported on this browser.'); 
         return; 
     }
     
@@ -174,37 +175,38 @@ window.startContinuousDictation = (inputId, langId, statusId, startBtnId, stopBt
     currentStatus = document.getElementById(statusId);
     currentInput = document.getElementById(inputId);
     
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition; 
     dictationRecognition = new SpeechRecognition(); 
-    // السر هنا: إيقاف الاستمرار التلقائي لإجبار الموبايل على مسح ذاكرته ومنع التكرار
-    dictationRecognition.continuous = false; 
-    dictationRecognition.interimResults = true; 
+    
+    // 2. إعدادات الاستقرار القصوى للموبايل
+    dictationRecognition.continuous = false; // نوقف الاستمرار الكاذب الذي يفصل في الآيفون
+    dictationRecognition.interimResults = false; // نوقف التخمين الذي يسبب التكرار في أندرويد
     dictationRecognition.lang = document.getElementById(langId).value;
-
-    baseText = currentInput.value.trim();
 
     dictationRecognition.onstart = () => { 
         isDictating = true; 
         currentStartBtn.style.display = 'none'; currentStopBtn.style.display = 'inline-flex';
-        currentStatus.innerText = currentLang === 'ar' ? 'جاري الاستماع...' : 'Listening...'; 
+        currentStatus.innerText = currentLang === 'ar' ? 'تحدث، وسيكتب عند صمتك...' : 'Speak, it writes when you pause...'; 
         currentStatus.style.color = 'var(--danger)'; 
     };
 
     dictationRecognition.onresult = (event) => { 
-        let interimTranscript = '';
         let finalTranscript = '';
-        for (let i = 0; i < event.results.length; ++i) {
-            if (event.results[i].isFinal) { finalTranscript += event.results[i][0].transcript; } 
-            else { interimTranscript += event.results[i][0].transcript; }
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+            if (event.results[i].isFinal) {
+                finalTranscript += event.results[i][0].transcript + ' ';
+            }
         }
-        let space = baseText.length > 0 ? ' ' : '';
-        currentInput.value = baseText + space + finalTranscript + interimTranscript;
+        
+        // الدمج الآمن مع النص القديم
+        if (finalTranscript.trim().length > 0) {
+            let currentText = currentInput.value;
+            currentInput.value = currentText + (currentText.endsWith(' ') || currentText === '' ? '' : ' ') + finalTranscript.trim();
+        }
     };
 
     dictationRecognition.onend = () => { 
+        // 3. الخدعة العبقرية: إذا كان المستخدم لم يضغط "إيقاف"، نعيد فتح المايك فوراً (يهزم قيود آيفون)
         if(isDictating) { 
-            // التطبيق يعيد تشغيل المايك فوراً وبصمت ليظهر كأنه مستمر
-            baseText = currentInput.value.trim();
             try { dictationRecognition.start(); } catch(e) {} 
         } 
         else {
@@ -213,12 +215,24 @@ window.startContinuousDictation = (inputId, langId, statusId, startBtnId, stopBt
             currentStatus.style.color = 'var(--text-main)'; 
         }
     };
+
+    dictationRecognition.onerror = (event) => {
+        // معالجة الأخطاء بصمت لعدم إزعاج المستخدم إذا لم يسمع الموبايل شيئاً
+        if(event.error === 'no-speech') {
+            // تجاهل الخطأ، وسيقوم onend بإعادة التشغيل
+        } else {
+            console.log("Mic Error: ", event.error);
+        }
+    };
+
     try { dictationRecognition.start(); } catch(e) {}
 };
 
 window.stopContinuousDictation = () => { 
     isDictating = false; 
-    if(dictationRecognition) dictationRecognition.stop(); 
+    if(dictationRecognition) {
+        try { dictationRecognition.stop(); } catch(e) {}
+    }
     if(currentStartBtn) { currentStartBtn.style.display = 'inline-flex'; currentStopBtn.style.display = 'none'; }
     if(currentStatus) { currentStatus.innerText = currentLang === 'ar' ? 'المحتوى' : 'Content'; currentStatus.style.color = 'var(--text-main)'; }
 };
