@@ -9,7 +9,9 @@ if ('serviceWorker' in navigator) {
             newWorker = reg.installing;
             newWorker.addEventListener('statechange', () => {
                 if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                    document.getElementById('updateToast').classList.add('show');
+                    // تظهر هذه الرسالة للمستخدم عند وجود تحديث حقيقي على جيت هاب
+                    const toast = document.getElementById('updateToast');
+                    if(toast) toast.classList.add('show');
                 }
             });
         });
@@ -32,9 +34,14 @@ const firebaseConfig = {
 };
 
 let useCloud = false, auth, db, currentUser = null;
-if (firebaseConfig.apiKey && firebaseConfig.apiKey.length > 10 && firebaseConfig.apiKey !== "ضع_مفتاحك_هنا") {
-    firebase.initializeApp(firebaseConfig); auth = firebase.auth(); db = firebase.firestore(); useCloud = true;
-    db.enablePersistence().catch(err => console.log("Offline error:", err));
+if (firebaseConfig.apiKey && firebaseConfig.apiKey.length > 10) {
+    firebase.initializeApp(firebaseConfig); 
+    auth = firebase.auth(); 
+    db = firebase.firestore(); 
+    useCloud = true;
+    
+    // ملاحظة إسلام: تم حذف سطر db.enablePersistence() نهائياً لحل خطأ Assertion المسبب لتوقف التطبيق
+    
     auth.onAuthStateChanged(user => {
         const cloudStatus = document.getElementById('cloudStatus');
         if (user) {
