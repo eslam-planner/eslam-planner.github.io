@@ -9,9 +9,11 @@ if ('serviceWorker' in navigator) {
             newWorker = reg.installing;
             newWorker.addEventListener('statechange', () => {
                 if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                    // تظهر هذه الرسالة للمستخدم عند وجود تحديث حقيقي على جيت هاب
                     const toast = document.getElementById('updateToast');
-                    if(toast) toast.classList.add('show');
+                    if(toast) {
+                        toast.style.display = 'block'; // السر هنا: إظهار النافذة بشكل مرئي
+                        toast.classList.add('show');
+                    }
                 }
             });
         });
@@ -19,7 +21,8 @@ if ('serviceWorker' in navigator) {
     
     let refreshing = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (!refreshing) { window.location.reload(); refreshing = true; }
+        // التعديل هنا: إضافة true لعمل تحديث إجباري ومسح الكاش القديم
+        if (!refreshing) { window.location.reload(true); refreshing = true; }
     });
 }
 
