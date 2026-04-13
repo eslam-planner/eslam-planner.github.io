@@ -1,11 +1,25 @@
 // 1. PWA & Update Notification
 let deferredPrompt;
 window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; const installBtn = document.getElementById('installAppBtn'); if(installBtn) installBtn.style.display = 'inline-flex'; });
-document.addEventListener('DOMContentLoaded', () => { 
-    const installBtn = document.getElementById('installAppBtn'); 
-    if(installBtn) { installBtn.addEventListener('click', async () => { if (deferredPrompt) { deferredPrompt.prompt(); const { outcome } = await deferredPrompt.userChoice; if (outcome === 'accepted') installBtn.style.display = 'none'; deferredPrompt = null; } }); } 
-});
-if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js').then(reg => { reg.onupdatefound = () => { const installingWorker = reg.installing; installingWorker.onstatechange = () => { if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) { document.getElementById('updateToast').classList.add('show'); } }; }; }).catch(e=>console.log(e)); }
+
+let newWorker;
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').then(reg => {
+        reg.addEventListener('updatefound', () => {
+            newWorker = reg.installing;
+            newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    document.getElementById('updateToast').classList.add('show');
+                }
+            });
+        });
+    }).catch(e=>console.log(e));
+    
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!refreshing) { window.location.reload(); refreshing = true; }
+    });
+}
 
 // 2. Firebase Cloud Sync
 const firebaseConfig = {
@@ -141,11 +155,11 @@ window.logoutCloud = () => { auth.signOut().then(() => { localStorage.clear(); l
 function linkify(text) { const urlRegex = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%Sub=~_|])/ig; const phoneRegex = /(\b\d{10,14}\b)/g; return text.replace(urlRegex, url => `<a href="${url}" target="_blank">${url}</a>`).replace(phoneRegex, phone => `<a href="tel:${phone}">${phone}</a>`); }
 
 // ----------------------------------------
-// برمجة الذكاء الاصطناعي (مُحسّن للموبايل - الإصدار النهائي لمنع التكرار)
+// برمجة الذكاء الاصطناعي (الحل الجذري لمشكلة تكرار أندرويد)
 // ----------------------------------------
 let dictationRecognition = null; let isDictating = false; 
 let currentStartBtn = null, currentStopBtn = null, currentStatus = null, currentInput = null;
-let baseText = ''; // لحفظ النص الموجود مسبقاً
+let baseText = ''; 
 
 window.startContinuousDictation = (inputId, langId, statusId, startBtnId, stopBtnId) => {
     if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) { 
@@ -162,11 +176,11 @@ window.startContinuousDictation = (inputId, langId, statusId, startBtnId, stopBt
     
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition; 
     dictationRecognition = new SpeechRecognition(); 
-    dictationRecognition.continuous = true; 
+    // السر هنا: إيقاف الاستمرار التلقائي لإجبار الموبايل على مسح ذاكرته ومنع التكرار
+    dictationRecognition.continuous = false; 
     dictationRecognition.interimResults = true; 
     dictationRecognition.lang = document.getElementById(langId).value;
 
-    // 1. نحفظ ما كان مكتوباً في المربع قبل بدء التسجيل كـ "أساس"
     baseText = currentInput.value.trim();
 
     dictationRecognition.onstart = () => { 
@@ -177,20 +191,19 @@ window.startContinuousDictation = (inputId, langId, statusId, startBtnId, stopBt
     };
 
     dictationRecognition.onresult = (event) => { 
-        let currentSessionTranscript = '';
-        
-        // 2. السر هنا: نقوم بتجميع كل الكلام المسموع في الجلسة الحالية من الصفر في كل مرة
+        let interimTranscript = '';
+        let finalTranscript = '';
         for (let i = 0; i < event.results.length; ++i) {
-            currentSessionTranscript += event.results[i][0].transcript;
+            if (event.results[i].isFinal) { finalTranscript += event.results[i][0].transcript; } 
+            else { interimTranscript += event.results[i][0].transcript; }
         }
-        
-        // 3. ندمج النص الأساسي القديم مع الجملة الحالية النظيفة
-        currentInput.value = (baseText ? baseText + ' ' : '') + currentSessionTranscript;
+        let space = baseText.length > 0 ? ' ' : '';
+        currentInput.value = baseText + space + finalTranscript + interimTranscript;
     };
 
     dictationRecognition.onend = () => { 
         if(isDictating) { 
-            // إذا توقف المايك فجأة (بسبب صمت طويل)، نحدث النص الأساسي ونعيد فتح المايك
+            // التطبيق يعيد تشغيل المايك فوراً وبصمت ليظهر كأنه مستمر
             baseText = currentInput.value.trim();
             try { dictationRecognition.start(); } catch(e) {} 
         } 
@@ -211,6 +224,9 @@ window.stopContinuousDictation = () => {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
+
+const reloadBtn = document.getElementById('reloadAppBtn');
+    if(reloadBtn) reloadBtn.addEventListener('click', () => { if(newWorker) newWorker.postMessage({ action: 'skipWaiting' }); });
     
     // كود إظهار وإخفاء كلمة المرور
     const togglePasswordBtn = document.getElementById('togglePasswordBtn');

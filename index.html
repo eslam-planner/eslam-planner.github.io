@@ -307,6 +307,15 @@
     </div>
 </div>
 
+<div id="updateToast" class="update-toast">
+        <div>
+            <strong data-i18n="update_title" style="color: var(--primary); display:block; margin-bottom:5px;">تحديث جديد متاح! ✨</strong>
+            <span data-i18n="update_desc" style="font-size:0.85rem; color: var(--text-muted);">تمت إضافة ميزات جديدة، يرجى التحديث.</span>
+        </div>
+        <button id="reloadAppBtn" class="btn btn-primary" data-i18n="btn_update_now" style="margin: 0 10px;">تحديث الآن</button>
+        <button class="btn btn-secondary" onclick="document.getElementById('updateToast').classList.remove('show')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
 <script src="script.js"></script>
 </body>
 </html>
