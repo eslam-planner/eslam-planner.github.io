@@ -245,10 +245,37 @@ window.stopContinuousDictation = () => {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-
-const reloadBtn = document.getElementById('reloadAppBtn');
-    if(reloadBtn) reloadBtn.addEventListener('click', () => { if(newWorker) newWorker.postMessage({ action: 'skipWaiting' }); });
     
+    // 1. تطبيق حجم الخط المحفوظ
+    const savedFontSize = localStorage.getItem('plannerFontSize') || '16px';
+    document.documentElement.style.fontSize = savedFontSize;
+    const fontSizeSelect = document.getElementById('fontSizeSelect');
+    if (fontSizeSelect) fontSizeSelect.value = savedFontSize;
+
+    // 2. تفعيل زر التثبيت
+    const installBtn = document.getElementById('installAppBtn');
+    if (installBtn) {
+        installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') { deferredPrompt = null; installBtn.style.display = 'none'; }
+            }
+        });
+    }
+
+    // 3. تفعيل زر التحديث
+    const reloadBtn = document.getElementById('reloadAppBtn');
+    if (reloadBtn) {
+        reloadBtn.addEventListener('click', () => {
+            if (newWorker) {
+                newWorker.postMessage({ action: 'skipWaiting' });
+                document.getElementById('updateToast').classList.remove('show');
+                setTimeout(() => { window.location.reload(true); }, 500);
+            }
+        });
+    }
+   
     // كود إظهار وإخفاء كلمة المرور
     const togglePasswordBtn = document.getElementById('togglePasswordBtn');
     const authPassword = document.getElementById('authPassword');
@@ -416,3 +443,8 @@ function initProfile() { document.getElementById('profileName').value = profile.
 function initBackup() { document.getElementById('backupBtn').onclick = () => { let d = {}; for(let i=0;i<localStorage.length;i++) d[localStorage.key(i)] = localStorage.getItem(localStorage.key(i)); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(d)], {type:"application/json"})); a.download = `Backup.json`; a.click(); }; document.getElementById('restoreFile').onchange = e => { const r = new FileReader(); r.onload = ev => { const d = JSON.parse(ev.target.result); for(let k in d) localStorage.setItem(k, d[k]); location.reload(); }; r.readAsText(e.target.files[0]); }; }
 function initModals() { document.querySelectorAll('.close-modal').forEach(b => b.onclick = () => { document.querySelectorAll('.modal').forEach(m => m.classList.remove('show')); stopContinuousDictation(); }); }
 function initTheme() { if(localStorage.getItem('dark_mode')==='true') document.body.classList.add('dark-mode'); document.getElementById('themeToggle').onclick = () => { document.body.classList.toggle('dark-mode'); localStorage.setItem('dark_mode', document.body.classList.contains('dark-mode')); }; }
+
+window.changeFontSize = (size) => {
+    document.documentElement.style.fontSize = size;
+    localStorage.setItem('plannerFontSize', size);
+};

@@ -168,6 +168,16 @@
                         <button class="color-btn" data-theme="theme-rose" style="background: #f43f5e;" title="Rose"></button>
                     </div>
 
+<div style="margin-top: 15px;">
+            <label style="display:block; margin-bottom:5px; font-weight:bold; color: var(--text-main);">حجم الخط داخل التطبيق:</label>
+            <select id="fontSizeSelect" onchange="changeFontSize(this.value)" style="width: 100%; padding: 8px; border-radius: 5px; background: var(--bg-main); color: var(--text-main); border: 1px solid var(--border-color); font-family: inherit; outline: none;">
+                <option value="14px">صغير</option>
+                <option value="16px" selected>متوسط (الافتراضي)</option>
+                <option value="18px">كبير</option>
+                <option value="20px">كبير جداً</option>
+            </select>
+        </div>
+
                     <hr style="margin: 20px 0;">
                     <h3 data-i18n="title_sync">المزامنة السحابية الحية ☁️</h3>
                     <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:10px;" data-i18n="sync_desc">عند تسجيل الخروج سيتم مسح بياناتك من هذا الجهاز لضمان السرية، وستبقى آمنة في حسابك.</p>
@@ -307,13 +317,19 @@
     </div>
 </div>
 
-<div id="updateToast" class="update-toast">
+<div id="updateToast" class="update-toast" style="padding: 15px; border-radius: 10px; background: var(--bg-card); border: 1px solid var(--primary); box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 9999;">
         <div>
-            <strong data-i18n="update_title" style="color: var(--primary); display:block; margin-bottom:5px;">تحديث جديد متاح! ✨</strong>
-            <span data-i18n="update_desc" style="font-size:0.85rem; color: var(--text-muted);">تمت إضافة ميزات جديدة، يرجى التحديث.</span>
+            <strong data-i18n="update_title" style="color: var(--primary); display:block; margin-bottom:5px; font-size: 1.1rem;">تحديث جديد متاح! ✨</strong>
+            <span style="font-size:0.9rem; color: var(--text-main); display:block; margin-bottom: 10px; line-height: 1.5;">
+                <strong>الجديد في هذا الإصدار:</strong><br>
+                - إضافة ميزة التحكم في حجم الخط.<br>
+                - تحسين سرعة التطبيق وإصلاح الأخطاء.
+            </span>
         </div>
-        <button id="reloadAppBtn" class="btn btn-primary" data-i18n="btn_update_now" style="margin: 0 10px;">تحديث الآن</button>
-        <button class="btn btn-secondary" onclick="document.getElementById('updateToast').classList.remove('show')"><i class="fa-solid fa-xmark"></i></button>
+        <div style="display: flex; gap: 10px; margin-top: 10px;">
+            <button id="reloadAppBtn" class="btn btn-primary" style="flex:1;">تحديث الآن</button>
+            <button class="btn btn-secondary" onclick="document.getElementById('updateToast').classList.remove('show')" style="flex:1;">ليس الآن</button>
+        </div>
     </div>
 
 <script src="script.js"></script>
