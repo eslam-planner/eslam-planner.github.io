@@ -248,6 +248,24 @@ window.stopContinuousDictation = () => {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
+
+// كود ضبط التاريخ التلقائي والمزامنة مع منتصف الليل محلياً
+    const setTodayDateAuto = () => {
+        const today = new Date();
+        const localDate = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+        
+        const viewDailyDate = document.getElementById('viewDailyDate');
+        if (viewDailyDate && viewDailyDate.value !== localDate) {
+            viewDailyDate.value = localDate;
+            if (typeof currentDailyDate !== 'undefined') {
+                currentDailyDate = localDate;
+            }
+            if (typeof renderDaily === 'function') renderDaily();
+        }
+    };
+    
+    setTodayDateAuto(); 
+    setInterval(setTodayDateAuto, 60000);
     
     // 1. تطبيق حجم الخط المحفوظ
     const savedFontSize = localStorage.getItem('plannerFontSize') || '16px';
@@ -267,15 +285,16 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 3. تفعيل زر التحديث
+    // 3. تفعيل زر التحديث الإجباري والآمن (مُحسّن للأوفلاين)
     const reloadBtn = document.getElementById('reloadAppBtn');
     if (reloadBtn) {
         reloadBtn.addEventListener('click', () => {
+            document.getElementById('updateToast').style.display = 'none'; // إخفاء النافذة فوراً
             if (newWorker) {
                 newWorker.postMessage({ action: 'skipWaiting' });
-                document.getElementById('updateToast').classList.remove('show');
-                setTimeout(() => { window.location.reload(true); }, 500);
             }
+            // استخدام خدعة href للتحديث بدلاً من reload(true) لضمان عملها أوفلاين
+            setTimeout(() => { window.location.href = window.location.href; }, 300);
         });
     }
    
@@ -344,10 +363,62 @@ window.editTask = (id) => {
     for(let i = 6; i <= 23; i++) { let opt = document.createElement('option'); opt.value = i; opt.textContent = i === 12 ? '12 PM' : (i > 12 ? `${i - 12} PM` : `${i} AM`); if(i == task.hour) opt.selected = true; hourSelect.appendChild(opt); }
     document.getElementById('editTaskModal').classList.add('show');
 };
+// التعديل الشامل لزر تحديث المهمة (مع المزامنة العكسية)
 document.getElementById('updateTaskBtn').onclick = () => {
-    let id = parseInt(document.getElementById('editTaskId').value); let title = document.getElementById('editTaskTitle').value; let dateStr = document.getElementById('editTaskDate').value; let hour = document.getElementById('editTaskHour').value;
-    if(!title) return; let task = tasks.find(t => t.id === id);
-    if(task) { let oldDate = task.date; task.title = title; task.date = dateStr; task.hour = hour; if(dateStr !== oldDate) { let [y, m, d] = dateStr.split('-'); let storageKey = `PlannerMonthData_${parseInt(y)}_${parseInt(m)-1}_${parseInt(d)}`; let currentText = localStorage.getItem(storageKey) || ""; let timeTxt = hour == 12 ? '12 PM' : (hour > 12 ? (hour-12)+' PM' : hour+' AM'); localStorage.setItem(storageKey, currentText ? currentText + '\n- ' + title + ' ('+timeTxt+')' : '- ' + title + ' ('+timeTxt+')'); } saveAll(); renderViews(); document.getElementById('editTaskModal').classList.remove('show'); }
+    let id = parseInt(document.getElementById('editTaskId').value); 
+    let title = document.getElementById('editTaskTitle').value; 
+    let dateStr = document.getElementById('editTaskDate').value;
+    let hour = document.getElementById('editTaskHour').value;
+    
+    if(!title) return; 
+    let task = tasks.find(t => t.id === id);
+    
+    if(task) { 
+        let oldDate = task.date;
+        let oldTitle = task.title; // الاحتفاظ بالعنوان القديم للبحث عنه
+
+        task.title = title; 
+        task.date = dateStr; 
+        task.hour = hour; 
+        
+        if(dateStr !== oldDate) { 
+            if (task.isMonthly) {
+                // 1. تنظيف النص من علامة الدبوس للبحث عنه
+                let cleanOldText = oldTitle.replace('📌 خطة الشهر: ', '').replace('📌 Month Plan: ', '').trim();
+                let cleanNewText = title.replace('📌 خطة الشهر: ', '').replace('📌 Month Plan: ', '').trim();
+
+                // 2. مسح المهمة من التاريخ القديم في خطة الشهر
+                let [oY, oM, oD] = oldDate.split('-');
+                let oldKey = `PlannerMonthData_${parseInt(oY)}_${parseInt(oM)-1}_${parseInt(oD)}`;
+                let oldMonthText = localStorage.getItem(oldKey) || "";
+                if (cleanOldText && oldMonthText.includes(cleanOldText)) {
+                    let newOldText = oldMonthText.replace(cleanOldText, '').trim();
+                    // تنظيف الأسطر الفارغة الإضافية إن وجدت
+                    newOldText = newOldText.replace(/^\s*[\r\n]/gm, '');
+                    localStorage.setItem(oldKey, newOldText);
+                }
+
+                // 3. إضافة المهمة إلى التاريخ الجديد في خطة الشهر
+                let [nY, nM, nD] = dateStr.split('-');
+                let newKey = `PlannerMonthData_${parseInt(nY)}_${parseInt(nM)-1}_${parseInt(nD)}`;
+                let newMonthText = localStorage.getItem(newKey) || "";
+                if (!newMonthText.includes(cleanNewText)) {
+                    localStorage.setItem(newKey, newMonthText ? newMonthText + '\n' + cleanNewText : cleanNewText);
+                }
+            } else {
+                // الترحيل للمهام العادية التي يتم تغيير تاريخها
+                let [y, m, d] = dateStr.split('-');
+                let storageKey = `PlannerMonthData_${parseInt(y)}_${parseInt(m)-1}_${parseInt(d)}`; 
+                let currentText = localStorage.getItem(storageKey) || ""; 
+                let timeTxt = hour == 12 ? '12 PM' : (hour > 12 ? (hour-12)+' PM' : hour+' AM'); 
+                localStorage.setItem(storageKey, currentText ? currentText + '\n- ' + title + ' ('+timeTxt+')' : '- ' + title + ' ('+timeTxt+')'); 
+            }
+        } 
+        
+        saveAll(); 
+        renderViews(); 
+        document.getElementById('editTaskModal').classList.remove('show'); 
+    }
 };
 
 // ----------------------------------------
@@ -388,48 +459,296 @@ document.getElementById('updateLibBtn').onclick = () => {
     if(l) { l.title = document.getElementById('editLibTitle').value; l.category = document.getElementById('editLibCategory').value; l.content = document.getElementById('editLibContent').value; saveAll(); renderLibrary(); document.getElementById('editLibModal').classList.remove('show'); stopContinuousDictation(); }
 };
 
-function renderMonthly() { const container = document.getElementById('monthlyContainer'); container.innerHTML = ''; const mNames = currentLang === 'ar' ? monthNamesAr : monthNamesEn; document.getElementById('monthlyTitle').innerText = `${mNames[currentMonthView]} ${currentYearView}`; const daysInMonth = new Date(currentYearView, currentMonthView + 1, 0).getDate(); let dayText = currentLang === 'ar' ? 'اليوم:' : 'Day:'; let placeholderText = currentLang === 'ar' ? 'اكتب خطتك (الروابط تعمل تلقائياً)' : 'Type your plan (links work automatically)'; for(let i = 1; i <= daysInMonth; i++) { let storageKey = `PlannerMonthData_${currentYearView}_${currentMonthView}_${i}`; let savedText = localStorage.getItem(storageKey) || ""; const dayDiv = document.createElement('div'); dayDiv.className = 'month-day-card'; dayDiv.innerHTML = `<div class="month-day-header"><span>${dayText} ${i} ${mNames[currentMonthView]}</span></div><textarea class="multi-line-input no-print" rows="3" data-key="${storageKey}" placeholder="${placeholderText}">${savedText}</textarea><div class="render-area">${linkify(savedText)}</div>`; container.appendChild(dayDiv); } document.querySelectorAll('.multi-line-input').forEach(ta => { ta.oninput = e => { e.target.nextElementSibling.innerHTML = linkify(e.target.value); }; ta.onchange = e => { localStorage.setItem(e.target.dataset.key, e.target.value); saveAll(); }; }); }
+// ==========================================
+// برمجة خطة الشهر (المزامنة الاحترافية مع جدول اليوم)
+// ==========================================
+function renderMonthly() { 
+    const container = document.getElementById('monthlyContainer'); 
+    if(!container) return;
+    container.innerHTML = ''; 
+    const mNames = currentLang === 'ar' ? monthNamesAr : monthNamesEn; 
+    document.getElementById('monthlyTitle').innerText = `${mNames[currentMonthView]} ${currentYearView}`; 
+    const daysInMonth = new Date(currentYearView, currentMonthView + 1, 0).getDate(); 
+    let dayText = currentLang === 'ar' ? 'اليوم:' : 'Day:'; 
+    let placeholderText = currentLang === 'ar' ? 'اكتب خطتك (الروابط تعمل تلقائياً)' : 'Type your plan (links work automatically)'; 
+    
+    // اكتشاف تاريخ اليوم الواقعي لتمييزه
+    const todayObj = new Date();
+    const isCurrentMonth = (todayObj.getMonth() === currentMonthView && todayObj.getFullYear() === currentYearView);
+    const todayDate = todayObj.getDate();
 
+    for(let i = 1; i <= daysInMonth; i++) { 
+        let storageKey = `PlannerMonthData_${currentYearView}_${currentMonthView}_${i}`; 
+        let savedText = localStorage.getItem(storageKey) || ""; 
+        const dayDiv = document.createElement('div'); 
+        dayDiv.className = 'month-day-card'; 
+        
+        // تمييز كارت اليوم الحالي وإعطاؤه ID للنزول إليه
+        if (isCurrentMonth && i === todayDate) {
+            dayDiv.id = 'todayMonthCard';
+            dayDiv.style.border = '2px solid var(--primary)';
+        }
+
+        let isTodayText = (isCurrentMonth && i === todayDate) ? (currentLang === 'ar' ? '(اليوم)' : '(Today)') : '';
+
+        dayDiv.innerHTML = `<div class="month-day-header"><span>${dayText} ${i} ${mNames[currentMonthView]} <b style="color:var(--primary);">${isTodayText}</b></span></div><textarea class="multi-line-input no-print" rows="3" data-key="${storageKey}" data-day="${i}" placeholder="${placeholderText}">${savedText}</textarea><div class="render-area">${linkify(savedText)}</div>`; 
+        container.appendChild(dayDiv); 
+    } 
+    
+    document.querySelectorAll('.multi-line-input').forEach(ta => { 
+        ta.oninput = e => { e.target.nextElementSibling.innerHTML = linkify(e.target.value); }; 
+        ta.onchange = e => { 
+            let newText = e.target.value;
+            localStorage.setItem(e.target.dataset.key, newText); 
+
+            let dayNum = parseInt(e.target.getAttribute('data-day'));
+            let dStr = String(dayNum).padStart(2, '0');
+            let mStr = String(currentMonthView + 1).padStart(2, '0');
+            let targetDateStr = `${currentYearView}-${mStr}-${dStr}`;
+
+            let existingTaskIndex = tasks.findIndex(t => t.date === targetDateStr && t.isMonthly === true);
+
+            if (newText.trim() === "") {
+                if (existingTaskIndex !== -1) tasks.splice(existingTaskIndex, 1);
+            } else {
+                let taskLabel = (currentLang === 'ar' ? '📌 خطة الشهر: ' : '📌 Month Plan: ') + newText.trim();
+                if (existingTaskIndex !== -1) {
+                    // التعديل: استخدام title لتتوافق مع جدول اليوم
+                    tasks[existingTaskIndex].title = taskLabel;
+                } else {
+                    tasks.push({
+                        id: Date.now(),
+                        title: taskLabel, // التعديل: استخدام title
+                        date: targetDateStr,
+                        hour: 6, // التعديل: استخدام hour ورقم 6
+                        completed: false,
+                        isMonthly: true 
+                    });
+                }
+            }
+
+            saveAll(); 
+            if (typeof currentDailyDate !== 'undefined' && currentDailyDate === targetDateStr && typeof renderDaily === 'function') {
+                renderDaily();
+            }
+        }; 
+    }); 
+
+    /// النزول التلقائي (Scroll) إلى يومنا الحالي ليكون في منتصف الشاشة بدقة
+    if (isCurrentMonth) {
+        setTimeout(() => {
+            let todayCard = document.getElementById('todayMonthCard');
+            if (todayCard) {
+                // التعديل السحري هنا: استخدام center بدلاً من start
+                todayCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }, 300); // تأخير بسيط لضمان تحميل الشاشة
+    }
+}
+
+
+// ==========================================
+// برمجة مؤقت التركيز (مع فك حظر الصوت الشامل لجميع الأجهزة)
+// ==========================================
 let pomTimer, targetTime = 0, pomTimeLeft = 25 * 60, isPomRunning = false, pomMode = 'work', workDuration = 25;
+
 function initPomodoro() { 
-    const d = document.getElementById('timerDisplay'); const wd = document.getElementById('pomWorkDuration'); const alarm = document.getElementById('pomAlarmSound'); const stopBtn = document.getElementById('stopAlarmBtn'); const startBtn = document.getElementById('pomStart'); const pauseBtn = document.getElementById('pomPause');
+    const d = document.getElementById('timerDisplay'); 
+    const wd = document.getElementById('pomWorkDuration'); 
+    const alarm = document.getElementById('pomAlarmSound'); 
+    const stopBtn = document.getElementById('stopAlarmBtn'); 
+    const startBtn = document.getElementById('pomStart'); 
+    const pauseBtn = document.getElementById('pomPause');
+
+    // --- بداية كود فك حظر الصوت الشامل (للموبايل والماك) ---
+    const unlockAudio = () => {
+        if(alarm) {
+            alarm.load(); // إجبار المتصفح على سحب ملف الصوت
+            alarm.volume = 1.0;
+            alarm.play().then(() => {
+                alarm.pause();
+                alarm.currentTime = 0;
+            }).catch(e => { /* تجاهل الخطأ الصامت */ });
+        }
+        // إزالة مستمع الحدث بعد أول لمسة لعدم إرهاق التطبيق
+        document.removeEventListener('touchstart', unlockAudio);
+        document.removeEventListener('click', unlockAudio);
+    };
+    // ربط فك الحظر بأول لمسة أو نقرة في أي مكان بالتطبيق
+    document.addEventListener('touchstart', unlockAudio, { once: true });
+    document.addEventListener('click', unlockAudio, { once: true });
+    // --- نهاية كود فك الحظر ---
+
     const updateTimeDisplay = () => { d.innerText = `${Math.floor(pomTimeLeft/60).toString().padStart(2,'0')}:${(pomTimeLeft%60).toString().padStart(2,'0')}`; }; 
     document.getElementById('pomMinus').onclick = () => { if(!isPomRunning && workDuration > 15) { workDuration -= 5; if(pomMode==='work'){ pomTimeLeft = workDuration*60; updateTimeDisplay();} wd.innerText = workDuration; } }; 
     document.getElementById('pomPlus').onclick = () => { if(!isPomRunning && workDuration < 60) { workDuration += 5; if(pomMode==='work'){ pomTimeLeft = workDuration*60; updateTimeDisplay();} wd.innerText = workDuration; } }; 
-    const setMode = (m, mins) => { clearInterval(pomTimer); isPomRunning=false; pomMode=m; pomTimeLeft=mins*60; updateTimeDisplay(); document.getElementById('pomWork').classList.toggle('active', m==='work'); document.getElementById('pomBreak').classList.toggle('active', m==='break'); startBtn.style.display = 'inline-flex'; pauseBtn.style.display = 'inline-flex'; stopBtn.style.display = 'none'; alarm.pause(); alarm.currentTime = 0; }; 
-    document.getElementById('pomWork').onclick = () => setMode('work', workDuration); document.getElementById('pomBreak').onclick = () => setMode('break', 5); 
-    startBtn.onclick = () => { if(isPomRunning) return; alarm.play().then(()=>alarm.pause()).catch(e=>{}); isPomRunning = true; targetTime = Date.now() + (pomTimeLeft * 1000); pomTimer = setInterval(() => { let remaining = Math.round((targetTime - Date.now()) / 1000); if(remaining <= 0) { clearInterval(pomTimer); isPomRunning=false; pomTimeLeft=0; updateTimeDisplay(); alarm.play(); startBtn.style.display = 'none'; pauseBtn.style.display = 'none'; stopBtn.style.display = 'inline-flex'; } else { pomTimeLeft = remaining; updateTimeDisplay(); } }, 1000); }; 
+    
+    const setMode = (m, mins) => { 
+        clearInterval(pomTimer); isPomRunning=false; pomMode=m; pomTimeLeft=mins*60; updateTimeDisplay(); 
+        document.getElementById('pomWork').classList.toggle('active', m==='work'); 
+        document.getElementById('pomBreak').classList.toggle('active', m==='break'); 
+        startBtn.style.display = 'inline-flex'; pauseBtn.style.display = 'inline-flex'; stopBtn.style.display = 'none'; 
+        if(alarm) { alarm.pause(); alarm.currentTime = 0; }
+    }; 
+    
+    document.getElementById('pomWork').onclick = () => setMode('work', workDuration); 
+    document.getElementById('pomBreak').onclick = () => setMode('break', 5); 
+    
+    startBtn.onclick = () => { 
+        if(isPomRunning) return; 
+        
+        // محاولة إضافية لفك الحظر عند الضغط على "ابدأ" كإجراء احتياطي
+        if(alarm) { alarm.play().then(()=>alarm.pause()).catch(e=>{}); }
+        
+        isPomRunning = true; 
+        targetTime = Date.now() + (pomTimeLeft * 1000); 
+        pomTimer = setInterval(() => { 
+            let remaining = Math.round((targetTime - Date.now()) / 1000); 
+            if(remaining <= 0) { 
+                clearInterval(pomTimer); 
+                isPomRunning=false; 
+                pomTimeLeft=0; 
+                updateTimeDisplay(); 
+                
+                // تشغيل الصوت بقوة عند انتهاء الوقت
+                if(alarm) { alarm.currentTime = 0; alarm.play().catch(e=>console.log("Audio Play Blocked:", e)); }
+                
+                startBtn.style.display = 'none'; 
+                pauseBtn.style.display = 'none'; 
+                stopBtn.style.display = 'inline-flex'; 
+            } else { 
+                pomTimeLeft = remaining; 
+                updateTimeDisplay(); 
+            } 
+        }, 1000); 
+    }; 
+    
     pauseBtn.onclick = () => { clearInterval(pomTimer); isPomRunning=false; }; 
     document.getElementById('pomReset').onclick = () => setMode(pomMode, pomMode==='work'?workDuration:5); 
-    stopBtn.onclick = () => { alarm.pause(); alarm.currentTime = 0; setMode(pomMode === 'work' ? 'break' : 'work', pomMode === 'work' ? 5 : workDuration); };
+    stopBtn.onclick = () => { if(alarm){ alarm.pause(); alarm.currentTime = 0; } setMode(pomMode === 'work' ? 'break' : 'work', pomMode === 'work' ? 5 : workDuration); };
+    
     updateTimeDisplay(); 
 }
 
-// ----------------------------------------
-// برمجة المشاريع Kanban (مع التعديل والـ Multi-line)
-// ----------------------------------------
-function renderKanban() { 
-    ['todo', 'inprogress', 'done'].forEach(col => { 
-        document.querySelector(`.kanban-items[data-status="${col}"]`).innerHTML = kanbanTasks[col].map(i => `<div class="kb-card" draggable="true" ondragstart="drag(event, ${i.id}, '${col}')" onclick="editKb(${i.id}, '${col}')"><div class="kb-card-text">${i.text}</div><div class="kb-card-actions no-print"><button class="kb-move-btn" onclick="event.stopPropagation(); moveKb(${i.id}, '${col}', -1)"><i class="fa-solid fa-arrow-right"></i></button><button class="kb-move-btn" style="color:var(--danger)" onclick="event.stopPropagation(); delKb(${i.id}, '${col}')"><i class="fa-solid fa-trash"></i></button><button class="kb-move-btn" onclick="event.stopPropagation(); moveKb(${i.id}, '${col}', 1)"><i class="fa-solid fa-arrow-left"></i></button></div></div>`).join(''); 
-    }); 
-}
-window.addKanbanItem = () => { const inp = document.getElementById('newKbItem'); if(inp.value.trim()) { kanbanTasks.todo.push({id:Date.now(), text:inp.value}); inp.value = ''; saveAll(); renderKanban(); } }
-window.delKb = (id, c) => { kanbanTasks[c] = kanbanTasks[c].filter(i => i.id !== id); saveAll(); renderKanban(); }
-window.moveKb = (id, c, d) => { const cols=['todo','inprogress','done']; let idx=cols.indexOf(c), n=idx+d; if(n>=0 && n<cols.length){ let i=kanbanTasks[c].find(x=>x.id===id); kanbanTasks[c]=kanbanTasks[c].filter(x=>x.id!==id); kanbanTasks[cols[n]].push(i); saveAll(); renderKanban(); } }
-window.drag = (ev, id, col) => { ev.dataTransfer.setData("id", id); ev.dataTransfer.setData("col", col); }
-window.allowDrop = ev => ev.preventDefault();
-window.drop = ev => { ev.preventDefault(); let tc = ev.target.closest('.kanban-items').getAttribute('data-status'), id = parseInt(ev.dataTransfer.getData("id")), sc = ev.dataTransfer.getData("col"); if(sc!==tc){ let i=kanbanTasks[sc].find(x=>x.id===id); kanbanTasks[sc]=kanbanTasks[sc].filter(x=>x.id!==id); kanbanTasks[tc].push(i); saveAll(); renderKanban(); } }
+// ==========================================
+// برمجة المشاريع Kanban (مع الأقسام الفرعية، التعديل، والحذف)
+// ==========================================
+function renderKanban() {
+    ['todo', 'inprogress', 'done'].forEach(col => {
+        const container = document.querySelector(`.kanban-items[data-status="${col}"]`);
+        if(!container) return;
+        
+        container.innerHTML = kanbanTasks[col].map(i => {
+            let subs = i.subtasks || [];
+            
+            // رسم الأقسام الفرعية مع أزرار التعديل والحذف الجديدة
+            let subsHTML = subs.map((sub, idx) => `
+                <div style="display:flex; align-items:center; gap:8px; margin-top:8px; padding: 5px; background: var(--bg-main); border-radius: 4px; border: 1px solid var(--border-color);">
+                    <input type="checkbox" ${sub.done ? 'checked' : ''} onchange="toggleSubtask(${i.id}, '${col}', ${idx})" style="cursor:pointer; width: 15px; height: 15px;">
+                    <span style="flex:1; text-decoration: ${sub.done ? 'line-through' : 'none'}; color: ${sub.done ? 'var(--text-muted)' : 'var(--text-main)'}; font-size: 0.9rem; white-space: pre-wrap; word-break: break-word;">${sub.text}</span>
+                    <button onclick="editSubtask(${i.id}, '${col}', ${idx})" class="icon-btn no-print" style="font-size:0.8rem; color:var(--text-muted);" title="تعديل الفرعي"><i class="fa-solid fa-pen"></i></button>
+                    <button onclick="delSubtask(${i.id}, '${col}', ${idx})" class="icon-btn no-print" style="font-size:0.8rem; color:var(--danger);" title="حذف الفرعي"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            `).join('');
 
-window.editKb = (id, col) => {
-    let k = kanbanTasks[col].find(x => x.id === id); if(!k) return;
-    document.getElementById('editKbId').value = k.id;
-    document.getElementById('editKbCol').value = col;
-    document.getElementById('editKbText').value = k.text;
-    document.getElementById('editKbModal').classList.add('show');
+            return `<div class="kb-card" draggable="true" ondragstart="drag(event, ${i.id}, '${col}')" style="cursor:grab; border-right: 4px solid var(--primary);">
+                <div style="display:flex; justify-content:space-between; align-items: flex-start; margin-bottom:5px;">
+                    <strong style="font-size: 1rem; flex:1;">${i.text}</strong>
+                    <div style="display:flex; gap:8px; align-items: center;">
+                        <button onclick="moveKb(${i.id}, '${col}', -1)" class="icon-btn no-print" style="color:var(--text-main);" title="نقل للسابق"><i class="fa-solid fa-arrow-right"></i></button>
+                        <button onclick="addSubtask(${i.id}, '${col}')" class="icon-btn no-print" style="color:var(--primary);" title="إضافة قسم فرعي"><i class="fa-solid fa-plus"></i></button>
+                        <button onclick="editKb(${i.id}, '${col}')" class="icon-btn no-print" style="color:var(--text-muted);" title="تعديل المشروع"><i class="fa-solid fa-pen"></i></button>
+                        <button onclick="delKb(${i.id}, '${col}')" class="icon-btn no-print" style="color:var(--danger);" title="حذف المشروع"><i class="fa-solid fa-trash"></i></button>
+                        <button onclick="moveKb(${i.id}, '${col}', 1)" class="icon-btn no-print" style="color:var(--text-main);" title="نقل للتالي"><i class="fa-solid fa-arrow-left"></i></button>
+                    </div>
+                </div>
+                <div style="margin-top: 10px;">
+                    ${subsHTML}
+                </div>
+            </div>`;
+        }).join('');
+    });
+}
+
+// 1. إضافة، حذف، ونقل المشاريع الرئيسية
+window.addKanbanItem = () => { 
+    const inp = document.getElementById('newKbItem'); 
+    if(inp && inp.value.trim()) { 
+        kanbanTasks.todo.push({id: Date.now(), text: inp.value.trim(), subtasks: []}); 
+        inp.value = ''; saveAll(); renderKanban(); 
+    } 
 };
-document.getElementById('updateKbBtn').onclick = () => {
-    let id = parseInt(document.getElementById('editKbId').value); let col = document.getElementById('editKbCol').value; let k = kanbanTasks[col].find(x => x.id === id);
-    if(k) { k.text = document.getElementById('editKbText').value; saveAll(); renderKanban(); document.getElementById('editKbModal').classList.remove('show'); }
+window.delKb = (id, c) => { kanbanTasks[c] = kanbanTasks[c].filter(i => i.id !== id); saveAll(); renderKanban(); };
+window.moveKb = (id, c, d) => { 
+    const cols=['todo','inprogress','done']; 
+    let idx=cols.indexOf(c), n=idx+d; 
+    if(n>=0 && n<cols.length){ 
+        let i=kanbanTasks[c].find(x=>x.id===id); 
+        kanbanTasks[c]=kanbanTasks[c].filter(x=>x.id!==id); 
+        kanbanTasks[cols[n]].push(i); saveAll(); renderKanban(); 
+    } 
+};
+
+// 2. كود السحب والإفلات (Drag & Drop)
+window.drag = (ev, id, col) => { ev.dataTransfer.setData("id", id); ev.dataTransfer.setData("col", col); };
+window.allowDrop = ev => ev.preventDefault();
+window.drop = ev => { 
+    ev.preventDefault(); 
+    let tc = ev.target.closest('.kanban-items').getAttribute('data-status');
+    let id = parseInt(ev.dataTransfer.getData("id"));
+    let sc = ev.dataTransfer.getData("col");
+    if(sc && tc && sc!==tc){ 
+        let i=kanbanTasks[sc].find(x=>x.id===id); 
+        kanbanTasks[sc]=kanbanTasks[sc].filter(x=>x.id!==id); 
+        kanbanTasks[tc].push(i); saveAll(); renderKanban(); 
+    } 
+};
+
+// 3. تعديل المشروع الرئيسي
+window.editKb = (id, col) => { 
+    let k = kanbanTasks[col].find(x => x.id === id); if(!k) return; 
+    document.getElementById('editKbId').value = k.id; 
+    document.getElementById('editKbCol').value = col; 
+    document.getElementById('editKbText').value = k.text; 
+    document.getElementById('editKbModal').classList.add('show'); 
+};
+document.getElementById('updateKbBtn').onclick = () => { 
+    let id = parseInt(document.getElementById('editKbId').value); 
+    let col = document.getElementById('editKbCol').value; 
+    let k = kanbanTasks[col].find(x => x.id === id); 
+    if(k) { k.text = document.getElementById('editKbText').value; saveAll(); renderKanban(); document.getElementById('editKbModal').classList.remove('show'); } 
+};
+
+// 4. العمليات على الأقسام الفرعية (إضافة، تحديد، تعديل، حذف)
+window.addSubtask = (id, col) => {
+    let text = prompt(currentLang === 'ar' ? 'أدخل اسم القسم/المهمة الفرعية:' : 'Enter subtask name:');
+    if(text && text.trim()) {
+        let task = kanbanTasks[col].find(t => t.id === id);
+        if(!task.subtasks) task.subtasks = [];
+        task.subtasks.push({text: text.trim(), done: false});
+        saveAll(); renderKanban();
+    }
+};
+window.toggleSubtask = (id, col, subIdx) => {
+    let task = kanbanTasks[col].find(t => t.id === id);
+    task.subtasks[subIdx].done = !task.subtasks[subIdx].done;
+    saveAll(); renderKanban();
+};
+window.editSubtask = (id, col, subIdx) => {
+    let task = kanbanTasks[col].find(t => t.id === id);
+    let oldText = task.subtasks[subIdx].text;
+    let newText = prompt(currentLang === 'ar' ? 'تعديل القسم الفرعي:' : 'Edit subtask:', oldText);
+    if(newText && newText.trim()) {
+        task.subtasks[subIdx].text = newText.trim();
+        saveAll(); renderKanban();
+    }
+};
+window.delSubtask = (id, col, subIdx) => {
+    if(confirm(currentLang === 'ar' ? 'هل أنت متأكد من حذف هذا القسم الفرعي؟' : 'Are you sure you want to delete this subtask?')) {
+        let task = kanbanTasks[col].find(t => t.id === id);
+        task.subtasks.splice(subIdx, 1);
+        saveAll(); renderKanban();
+    }
 };
 
 function renderDashboard() { let dashClearedStr = localStorage.getItem('fp_dash_cleared'); let activeTasks = (dashClearedStr === currentTodayStr) ? [] : tasks.filter(t => t.date === currentTodayStr); let completed = activeTasks.filter(t => t.completed).length; document.getElementById('dashTasks').innerText = `${completed} / ${activeTasks.length}`; let tHC = 0; let dHC = 0; habits.forEach(h => { for(let i=1; i<=30; i++) { tHC++; if(h.days[`${currentYearView}-${currentMonthView}-${i}`]) dHC++; } }); document.getElementById('dashHabits').innerText = `${tHC === 0 ? 0 : Math.round((dHC/tHC)*100)}%`; let balance = finances.reduce((acc, curr) => curr.type === 'income' ? acc + Number(curr.amount) : acc - Number(curr.amount), 0); document.getElementById('dashBalance').innerText = `${balance}`; let resetDate = localStorage.getItem('fp_stats_reset') || "2000-01-01"; const ctx = document.getElementById('tasksChart').getContext('2d'); if(myChart) myChart.destroy(); let labels = []; let dataDone = []; let dataPending = []; for(let i=6; i>=0; i--) { let d = new Date(); d.setDate(d.getDate() - i); let dateStr = new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().split('T')[0]; labels.push(d.toLocaleDateString(currentLang==='ar'?'ar-EG':'en-US', {weekday: 'short'})); let dayTasks = tasks.filter(t => t.date === dateStr && t.date >= resetDate); dataDone.push(dayTasks.filter(t => t.completed).length); dataPending.push(dayTasks.filter(t => !t.completed).length); } let primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#25D366'; myChart = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [ { label: i18n[currentLang].chart_done, data: dataDone, backgroundColor: primaryColor }, { label: i18n[currentLang].chart_pend, data: dataPending, backgroundColor: '#ef4444' } ] }, options: { responsive: true, scales: { y: { beginAtZero: true, ticks: {stepSize: 1} } } } }); }
