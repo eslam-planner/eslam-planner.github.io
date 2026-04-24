@@ -183,105 +183,37 @@
                     <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:10px;" data-i18n="sync_desc">عند تسجيل الخروج سيتم مسح بياناتك من هذا الجهاز لضمان السرية، وستبقى آمنة في حسابك.</p>
                     <div id="cloudStatus" style="background:var(--bg-color); padding:15px; border-radius:8px; border:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;"></div>
 
-                    <hr style="margin: 20px 0;">
                     <h3 data-i18n="title_backup">النسخ الاحتياطي اليدوي</h3>
                     <div style="display: flex; gap: 10px; margin-top: 10px;">
                         <button id="backupBtn" class="btn btn-secondary" style="flex:1;"><span data-i18n="btn_download">تنزيل البيانات</span></button>
                         <label for="restoreFile" class="btn btn-secondary" style="flex:1; cursor:pointer; text-align:center;"><span data-i18n="btn_restore">استرجاع ملف</span></label>
                         <input type="file" id="restoreFile" style="display:none;">
                     </div>
+                    
+                    <hr style="margin: 25px 0; border-color: var(--border-color);">
+                    
+                    <h3 data-i18n="title_update_log">سجل التحديثات 🔄</h3>
+                    <div id="changelogContainer" style="background:var(--bg-color); padding:15px; border-radius:8px; border:1px dashed var(--primary); margin-top:10px; margin-bottom:15px; font-size:0.9rem; line-height:1.6; max-height: 180px; overflow-y: auto;">
+                        </div>
+                    <button id="manualUpdateBtn" class="btn btn-primary no-print" style="width: 100%; padding: 10px;"><i class="fa-solid fa-arrows-rotate"></i> <span data-i18n="btn_check_update">البحث عن تحديث / تنشيط التطبيق</span></button>
+
                 </div>
             </div>
         </main>
     </div>
 
     <div id="taskModal" class="modal"><div class="modal-content"><h3 data-i18n="btn_add">إضافة مهمة</h3><input type="text" id="taskTitle" placeholder="العنوان..." required><div class="input-group"><input type="date" id="taskDate"><select id="taskHour"></select></div><div class="modal-actions"><button class="btn btn-secondary close-modal" data-i18n="btn_cancel">إلغاء</button><button id="saveTaskBtn" class="btn btn-primary" data-i18n="btn_save">حفظ</button></div></div></div>
-    <div id="editTaskModal" class="modal"><div class="modal-content"><h3 data-i18n="btn_edit_task">تعديل المهمة</h3><input type="hidden" id="editTaskId"><input type="text" id="editTaskTitle" required><div class="input-group"><input type="date" id="editTaskDate"><select id="editTaskHour"></select></div><div class="modal-actions"><button class="btn btn-secondary close-modal" data-i18n="btn_cancel">إلغاء</button><button id="updateTaskBtn" class="btn btn-primary" data-i18n="btn_update">تحديث</button></div></div></div>
+    <div id="editTaskModal" class="modal"><div class="modal-content"><h3 data-i18n="btn_edit_task">تعديل المهمة</h3><input type="hidden" id="editTaskId"><input type="text" id="editTaskTitle" required><div class="input-group"><input type="date" id="editTaskDate"><select id="editTaskHour"></select></div><input type="tel" id="editTaskPhone" placeholder="رقم الهاتف (مع كود الدولة مثل 201...)" style="margin-top: 10px; width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-color); color: var(--text-main);"><div class="modal-actions"><button class="btn btn-secondary close-modal" data-i18n="btn_cancel">إلغاء</button><button id="updateTaskBtn" class="btn btn-primary" data-i18n="btn_update">تحديث</button></div></div></div>
 
-    <div id="noteModal" class="modal">
-        <div class="modal-content">
-            <h3 data-i18n="btn_add_note">إضافة ملاحظة</h3>
-            <input type="text" id="noteTitle" placeholder="العنوان..." required>
-            <input type="date" id="noteDate" required>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; margin-bottom: 5px; background: rgba(37, 211, 102, 0.1); padding: 8px; border-radius: 6px;">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <span style="font-size:0.85rem; color:var(--text-main); font-weight:600;" id="dictateStatusNote" data-i18n="lib_dictate_hint">المحتوى</span>
-                    <select id="dictateLangNote" class="no-print" style="padding: 2px 5px; font-size: 0.8rem; border-radius: 4px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main);"><option value="ar-EG">عربي</option><option value="en-US">English</option></select>
-                </div>
-                <div style="display: flex; gap:5px;">
-                    <button type="button" onclick="startContinuousDictation('noteContent', 'dictateLangNote', 'dictateStatusNote', 'startDicNote', 'stopDicNote')" id="startDicNote" class="icon-btn" style="color:var(--primary); font-size: 1.2rem;" title="بدء التسجيل"><i class="fa-solid fa-microphone"></i></button>
-                    <button type="button" onclick="stopContinuousDictation()" id="stopDicNote" class="icon-btn" style="color:var(--danger); font-size: 1.2rem; display:none;" title="إيقاف التسجيل"><i class="fa-solid fa-square"></i></button>
-                </div>
-            </div>
-            <textarea id="noteContent" rows="5" placeholder="..." style="margin-top:0;"></textarea>
-            <div class="modal-actions"><button class="btn btn-secondary close-modal" data-i18n="btn_cancel">إلغاء</button><button id="saveNoteBtn" class="btn btn-primary" data-i18n="btn_save">حفظ</button></div>
-        </div>
-    </div>
-    
-    <div id="editNoteModal" class="modal">
-        <div class="modal-content">
-            <h3 data-i18n="btn_edit_note">تعديل الملاحظة</h3>
-            <input type="hidden" id="editNoteId">
-            <input type="text" id="editNoteTitle" required>
-            <input type="date" id="editNoteDate" required>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; margin-bottom: 5px; background: rgba(37, 211, 102, 0.1); padding: 8px; border-radius: 6px;">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <span style="font-size:0.85rem; color:var(--text-main); font-weight:600;" id="dictateStatusEditNote" data-i18n="lib_dictate_hint">المحتوى</span>
-                    <select id="dictateLangEditNote" class="no-print" style="padding: 2px 5px; font-size: 0.8rem; border-radius: 4px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main);"><option value="ar-EG">عربي</option><option value="en-US">English</option></select>
-                </div>
-                <div style="display: flex; gap:5px;">
-                    <button type="button" onclick="startContinuousDictation('editNoteContent', 'dictateLangEditNote', 'dictateStatusEditNote', 'startDicEditNote', 'stopDicEditNote')" id="startDicEditNote" class="icon-btn" style="color:var(--primary); font-size: 1.2rem;" title="بدء التسجيل"><i class="fa-solid fa-microphone"></i></button>
-                    <button type="button" onclick="stopContinuousDictation()" id="stopDicEditNote" class="icon-btn" style="color:var(--danger); font-size: 1.2rem; display:none;" title="إيقاف التسجيل"><i class="fa-solid fa-square"></i></button>
-                </div>
-            </div>
-            <textarea id="editNoteContent" rows="5" style="margin-top:0;"></textarea>
-            <div class="modal-actions"><button class="btn btn-secondary close-modal" data-i18n="btn_cancel">إلغاء</button><button id="updateNoteBtn" class="btn btn-primary" data-i18n="btn_update">تحديث</button></div>
-        </div>
-    </div>
+    <div id="noteModal" class="modal"><div class="modal-content"><h3 data-i18n="btn_add_note">إضافة ملاحظة</h3><input type="text" id="noteTitle" placeholder="العنوان..." required><input type="date" id="noteDate" required><input type="tel" id="notePhone" placeholder="رقم الهاتف (مثلاً 201...)" style="margin-top: 10px; width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-color); color: var(--text-main);"><div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; margin-bottom: 5px; background: rgba(37, 211, 102, 0.1); padding: 8px; border-radius: 6px;"><div style="display: flex; align-items: center; gap: 8px;"><span style="font-size:0.85rem; color:var(--text-main); font-weight:600;" id="dictateStatusNote" data-i18n="lib_dictate_hint">المحتوى</span><select id="dictateLangNote" class="no-print" style="padding: 2px 5px; font-size: 0.8rem; border-radius: 4px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main);"><option value="ar-EG">عربي</option><option value="en-US">English</option></select></div><div style="display: flex; gap:5px;"><button type="button" onclick="startContinuousDictation('noteContent', 'dictateLangNote', 'dictateStatusNote', 'startDicNote', 'stopDicNote')" id="startDicNote" class="icon-btn" style="color:var(--primary); font-size: 1.2rem;" title="بدء التسجيل"><i class="fa-solid fa-microphone"></i></button><button type="button" onclick="stopContinuousDictation()" id="stopDicNote" class="icon-btn" style="color:var(--danger); font-size: 1.2rem; display:none;" title="إيقاف التسجيل"><i class="fa-solid fa-square"></i></button></div></div><textarea id="noteContent" rows="5" placeholder="..." style="margin-top:0;"></textarea><div class="modal-actions"><button class="btn btn-secondary close-modal" data-i18n="btn_cancel">إلغاء</button><button id="saveNoteBtn" class="btn btn-primary" data-i18n="btn_save">حفظ</button></div></div></div>
+    <div id="editNoteModal" class="modal"><div class="modal-content"><h3 data-i18n="btn_edit_note">تعديل الملاحظة</h3><input type="hidden" id="editNoteId"><input type="text" id="editNoteTitle" required><input type="date" id="editNoteDate" required><input type="tel" id="editNotePhone" placeholder="رقم الهاتف" style="margin-top: 10px; width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-color); color: var(--text-main);"><div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; margin-bottom: 5px; background: rgba(37, 211, 102, 0.1); padding: 8px; border-radius: 6px;"><div style="display: flex; align-items: center; gap: 8px;"><span style="font-size:0.85rem; color:var(--text-main); font-weight:600;" id="dictateStatusEditNote" data-i18n="lib_dictate_hint">المحتوى</span><select id="dictateLangEditNote" class="no-print" style="padding: 2px 5px; font-size: 0.8rem; border-radius: 4px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main);"><option value="ar-EG">عربي</option><option value="en-US">English</option></select></div><div style="display: flex; gap:5px;"><button type="button" onclick="startContinuousDictation('editNoteContent', 'dictateLangEditNote', 'dictateStatusEditNote', 'startDicEditNote', 'stopDicEditNote')" id="startDicEditNote" class="icon-btn" style="color:var(--primary); font-size: 1.2rem;" title="بدء التسجيل"><i class="fa-solid fa-microphone"></i></button><button type="button" onclick="stopContinuousDictation()" id="stopDicEditNote" class="icon-btn" style="color:var(--danger); font-size: 1.2rem; display:none;" title="إيقاف التسجيل"><i class="fa-solid fa-square"></i></button></div></div><textarea id="editNoteContent" rows="5" style="margin-top:0;"></textarea><div class="modal-actions"><button class="btn btn-secondary close-modal" data-i18n="btn_cancel">إلغاء</button><button id="updateNoteBtn" class="btn btn-primary" data-i18n="btn_update">تحديث</button></div></div></div>
 
     <div id="financeModal" class="modal"><div class="modal-content"><h3 data-i18n="btn_add_trans">إضافة معاملة</h3><input type="text" id="finDesc" placeholder="الوصف" required><div class="input-group"><input type="number" id="finAmount" placeholder="المبلغ" required><select id="finType"><option value="income">إيراد (+)</option><option value="expense">مصروف (-)</option></select></div><input type="date" id="finDate" style="margin-top:10px;"><div class="modal-actions"><button class="btn btn-secondary close-modal" data-i18n="btn_cancel">إلغاء</button><button id="saveFinBtn" class="btn btn-primary" data-i18n="btn_save">حفظ</button></div></div></div>
     <div id="editFinModal" class="modal"><div class="modal-content"><h3 data-i18n="btn_edit_trans">تعديل المعاملة</h3><input type="hidden" id="editFinId"><input type="text" id="editFinDesc" required><div class="input-group"><input type="number" id="editFinAmount" required><select id="editFinType"><option value="income">إيراد (+)</option><option value="expense">مصروف (-)</option></select></div><input type="date" id="editFinDate" style="margin-top:10px;"><div class="modal-actions"><button class="btn btn-secondary close-modal" data-i18n="btn_cancel">إلغاء</button><button id="updateFinBtn" class="btn btn-primary" data-i18n="btn_update">تحديث</button></div></div></div>
 
-    <div id="libraryModal" class="modal">
-        <div class="modal-content">
-            <h3 data-i18n="btn_add_ref">إضافة مرجع</h3>
-            <input type="text" id="libTitle" placeholder="العنوان" required>
-            <input type="text" id="libCategory" placeholder="التصنيف" required style="margin-top:10px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; margin-bottom: 5px; background: rgba(37, 211, 102, 0.1); padding: 8px; border-radius: 6px;">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <span style="font-size:0.85rem; color:var(--text-main); font-weight:600;" id="dictateStatusLib" data-i18n="lib_dictate_hint">المحتوى</span>
-                    <select id="dictateLangLib" class="no-print" style="padding: 2px 5px; font-size: 0.8rem; border-radius: 4px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main);"><option value="ar-EG">عربي</option><option value="en-US">English</option></select>
-                </div>
-                <div style="display: flex; gap:5px;">
-                    <button type="button" onclick="startContinuousDictation('libContent', 'dictateLangLib', 'dictateStatusLib', 'startDicLib', 'stopDicLib')" id="startDicLib" class="icon-btn" style="color:var(--primary); font-size: 1.2rem;" title="بدء التسجيل"><i class="fa-solid fa-microphone"></i></button>
-                    <button type="button" onclick="stopContinuousDictation()" id="stopDicLib" class="icon-btn" style="color:var(--danger); font-size: 1.2rem; display:none;" title="إيقاف التسجيل"><i class="fa-solid fa-square"></i></button>
-                </div>
-            </div>
-            <textarea id="libContent" rows="5" placeholder="..." style="margin-top:0;"></textarea>
-            <div class="modal-actions"><button class="btn btn-secondary close-modal" data-i18n="btn_cancel">إلغاء</button><button id="saveLibBtn" class="btn btn-primary" data-i18n="btn_save">حفظ</button></div>
-        </div>
-    </div>
+    <div id="libraryModal" class="modal"><div class="modal-content"><h3 data-i18n="btn_add_ref">إضافة مرجع</h3><input type="text" id="libTitle" placeholder="العنوان" required><input type="text" id="libCategory" placeholder="التصنيف" required style="margin-top:10px;"><input type="tel" id="libPhone" placeholder="رقم الهاتف" style="margin-top: 10px; width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-color); color: var(--text-main);"><div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; margin-bottom: 5px; background: rgba(37, 211, 102, 0.1); padding: 8px; border-radius: 6px;"><div style="display: flex; align-items: center; gap: 8px;"><span style="font-size:0.85rem; color:var(--text-main); font-weight:600;" id="dictateStatusLib" data-i18n="lib_dictate_hint">المحتوى</span><select id="dictateLangLib" class="no-print" style="padding: 2px 5px; font-size: 0.8rem; border-radius: 4px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main);"><option value="ar-EG">عربي</option><option value="en-US">English</option></select></div><div style="display: flex; gap:5px;"><button type="button" onclick="startContinuousDictation('libContent', 'dictateLangLib', 'dictateStatusLib', 'startDicLib', 'stopDicLib')" id="startDicLib" class="icon-btn" style="color:var(--primary); font-size: 1.2rem;" title="بدء التسجيل"><i class="fa-solid fa-microphone"></i></button><button type="button" onclick="stopContinuousDictation()" id="stopDicLib" class="icon-btn" style="color:var(--danger); font-size: 1.2rem; display:none;" title="إيقاف التسجيل"><i class="fa-solid fa-square"></i></button></div></div><textarea id="libContent" rows="5" placeholder="..." style="margin-top:0;"></textarea><div class="modal-actions"><button class="btn btn-secondary close-modal" data-i18n="btn_cancel">إلغاء</button><button id="saveLibBtn" class="btn btn-primary" data-i18n="btn_save">حفظ</button></div></div></div>
     
-    <div id="editLibModal" class="modal">
-        <div class="modal-content">
-            <h3 data-i18n="btn_edit_ref">تعديل المرجع</h3>
-            <input type="hidden" id="editLibId">
-            <input type="text" id="editLibTitle" required>
-            <input type="text" id="editLibCategory" required style="margin-top:10px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; margin-bottom: 5px; background: rgba(37, 211, 102, 0.1); padding: 8px; border-radius: 6px;">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <span style="font-size:0.85rem; color:var(--text-main); font-weight:600;" id="dictateStatusEditLib" data-i18n="lib_dictate_hint">المحتوى</span>
-                    <select id="dictateLangEditLib" class="no-print" style="padding: 2px 5px; font-size: 0.8rem; border-radius: 4px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main);"><option value="ar-EG">عربي</option><option value="en-US">English</option></select>
-                </div>
-                <div style="display: flex; gap:5px;">
-                    <button type="button" onclick="startContinuousDictation('editLibContent', 'dictateLangEditLib', 'dictateStatusEditLib', 'startDicEditLib', 'stopDicEditLib')" id="startDicEditLib" class="icon-btn" style="color:var(--primary); font-size: 1.2rem;" title="بدء التسجيل"><i class="fa-solid fa-microphone"></i></button>
-                    <button type="button" onclick="stopContinuousDictation()" id="stopDicEditLib" class="icon-btn" style="color:var(--danger); font-size: 1.2rem; display:none;" title="إيقاف التسجيل"><i class="fa-solid fa-square"></i></button>
-                </div>
-            </div>
-            <textarea id="editLibContent" rows="5" style="margin-top:0;"></textarea>
-            <div class="modal-actions"><button class="btn btn-secondary close-modal" data-i18n="btn_cancel">إلغاء</button><button id="updateLibBtn" class="btn btn-primary" data-i18n="btn_update">تحديث</button></div>
-        </div>
-    </div>
+    <div id="editLibModal" class="modal"><div class="modal-content"><h3 data-i18n="btn_edit_ref">تعديل المرجع</h3><input type="hidden" id="editLibId"><input type="text" id="editLibTitle" required><input type="text" id="editLibCategory" required style="margin-top:10px;"><input type="tel" id="editLibPhone" placeholder="رقم الهاتف" style="margin-top: 10px; width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-color); color: var(--text-main);"><div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; margin-bottom: 5px; background: rgba(37, 211, 102, 0.1); padding: 8px; border-radius: 6px;"><div style="display: flex; align-items: center; gap: 8px;"><span style="font-size:0.85rem; color:var(--text-main); font-weight:600;" id="dictateStatusEditLib" data-i18n="lib_dictate_hint">المحتوى</span><select id="dictateLangEditLib" class="no-print" style="padding: 2px 5px; font-size: 0.8rem; border-radius: 4px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main);"><option value="ar-EG">عربي</option><option value="en-US">English</option></select></div><div style="display: flex; gap:5px;"><button type="button" onclick="startContinuousDictation('editLibContent', 'dictateLangEditLib', 'dictateStatusEditLib', 'startDicEditLib', 'stopDicEditLib')" id="startDicEditLib" class="icon-btn" style="color:var(--primary); font-size: 1.2rem;" title="بدء التسجيل"><i class="fa-solid fa-microphone"></i></button><button type="button" onclick="stopContinuousDictation()" id="stopDicEditLib" class="icon-btn" style="color:var(--danger); font-size: 1.2rem; display:none;" title="إيقاف التسجيل"><i class="fa-solid fa-square"></i></button></div></div><textarea id="editLibContent" rows="5" style="margin-top:0;"></textarea><div class="modal-actions"><button class="btn btn-secondary close-modal" data-i18n="btn_cancel">إلغاء</button><button id="updateLibBtn" class="btn btn-primary" data-i18n="btn_update">تحديث</button></div></div></div>
     
     <div id="editKbModal" class="modal">
         <div class="modal-content">
@@ -317,20 +249,17 @@
     </div>
 </div>
 
-<div id="updateToast" class="update-toast" style="display: none; padding: 15px; border-radius: 10px; background: var(--bg-card); border: 1px solid var(--primary); box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 9999;">
-        <div>
-            <strong data-i18n="update_title" style="color: var(--primary); display:block; margin-bottom:5px; font-size: 1.1rem;">تحديث جديد متاح! ✨</strong>
-            <span style="font-size:0.9rem; color: var(--text-main); display:block; margin-bottom: 10px; line-height: 1.5;">
-                <strong>الجديد في هذا الإصدار:</strong><br>
-                - إضافة ميزة التحكم في حجم الخط.<br>
-                - تحسين سرعة التطبيق وإصلاح الأخطاء.
+<div id="updateToast" class="update-toast" style="display: none; padding: 20px; border-radius: 16px; background: var(--card-bg); border: 2px solid var(--primary); box-shadow: 0 15px 40px rgba(0,0,0,0.3); z-index: 99999; flex-direction: column; width: 90%; max-width: 400px; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);">
+    <div style="width: 100%;">
+        <strong data-i18n="update_title" style="color: var(--primary); display:block; margin-bottom:10px; font-size: 1.2rem; text-align: center;">تحديث جديد متاح! ✨</strong>
+        <span id="updateMessageList" style="font-size:0.95rem; color: var(--text-main); display:block; margin-bottom: 20px; line-height: 1.6; text-align: right;">
             </span>
-        </div>
-        <div style="display: flex; gap: 10px; margin-top: 10px;">
-            <button id="reloadAppBtn" class="btn btn-primary" style="flex:1;">تحديث الآن</button>
-            <button class="btn btn-secondary" onclick="document.getElementById('updateToast').style.display='none';" style="flex:1;">ليس الآن</button>
-        </div>
     </div>
+    <div style="display: flex; gap: 12px; width: 100%;">
+        <button id="reloadAppBtn" class="btn btn-primary" style="flex:1; padding: 10px; font-weight: bold; font-size: 1rem;">تحديث الآن</button>
+        <button class="btn btn-secondary" onclick="document.getElementById('updateToast').style.display='none';" style="flex:1; padding: 10px; font-size: 1rem;">ليس الآن</button>
+    </div>
+</div>
 
 <script src="script.js"></script>
 </body>

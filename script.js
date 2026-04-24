@@ -1,4 +1,18 @@
-// 1. PWA & Update Notification
+// 1. سجل التحديثات (اكتب تحديثاتك هنا في كل إصدار جديد)
+const latestReleaseNotes = {
+    ar: [
+        "تفعيل الروابط التلقائية في الملاحظات والمراجع.",
+        "إضافة أيقونات الاتصال السريع والواتساب.",
+        "تطوير خطة الشهر وإضافة حفظ أرقام الهواتف."
+    ],
+    en: [
+        "Enabled clickable links in Notes & Library.",
+        "Added quick call and WhatsApp icons.",
+        "Upgraded Monthly Plan with phone number saving."
+    ]
+};
+
+// 2. PWA & Update Notification
 let deferredPrompt;
 window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; const installBtn = document.getElementById('installAppBtn'); if(installBtn) installBtn.style.display = 'inline-flex'; });
 
@@ -11,7 +25,13 @@ if ('serviceWorker' in navigator) {
                 if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                     const toast = document.getElementById('updateToast');
                     if(toast) {
-                        toast.style.display = 'block'; // السر هنا: إظهار النافذة بشكل مرئي
+                        // جلب التحديثات حسب لغة المستخدم الحالية وحقنها في الـ HTML
+                        const notesTitle = currentLang === 'ar' ? '<strong>الجديد في هذا الإصدار:</strong><br>' : '<strong>What\'s new in this version:</strong><br>';
+                        const notesList = latestReleaseNotes[currentLang].map(note => `- ${note}`).join('<br>');
+                        
+                        document.getElementById('updateMessageList').innerHTML = notesTitle + notesList;
+                        
+                        toast.style.display = 'block'; 
                         toast.classList.add('show');
                     }
                 }
@@ -21,7 +41,6 @@ if ('serviceWorker' in navigator) {
     
     let refreshing = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
-        // التعديل هنا: إضافة true لعمل تحديث إجباري ومسح الكاش القديم
         if (!refreshing) { window.location.reload(true); refreshing = true; }
     });
 }
@@ -79,7 +98,9 @@ const i18n = {
         title_appearance: "المظهر والألوان 🎨",
         title_sync: "المزامنة السحابية الحية ☁️", sync_desc: "عند تسجيل الخروج سيتم مسح بياناتك من هذا الجهاز لضمان السرية، وستبقى آمنة في حسابك.",
         title_backup: "النسخ الاحتياطي اليدوي", btn_download: "تنزيل البيانات", btn_restore: "استرجاع ملف",
-        chart_done: "مكتملة", chart_pend: "غير مكتملة", btn_cancel: "إلغاء", btn_save: "حفظ", title_login: "تسجيل الدخول للمزامنة"
+        chart_done: "مكتملة", chart_pend: "غير مكتملة", btn_cancel: "إلغاء", btn_save: "حفظ", title_login: "تسجيل الدخول للمزامنة",
+        title_update_log: "سجل التحديثات 🔄",
+        btn_check_update: "البحث عن تحديث / تنشيط التطبيق"
     },
     en: {
         nav_dash: "Dashboard", nav_month: "Monthly Plan", nav_today: "Today", nav_pomodoro: "Focus Timer", nav_kanban: "Projects", nav_habits: "Habit Tracker", nav_finance: "Finance", nav_lib: "Library", nav_notes: "Notes", nav_settings: "Settings & Sync",
@@ -98,7 +119,9 @@ const i18n = {
         title_appearance: "Appearance & Colors 🎨",
         title_sync: "Live Cloud Sync ☁️", sync_desc: "Logging out will securely wipe data from this device. It remains safe in your cloud account.",
         title_backup: "Manual Backup", btn_download: "Download Data", btn_restore: "Restore File",
-        chart_done: "Completed", chart_pend: "Pending", btn_cancel: "Cancel", btn_save: "Save", title_login: "Login to Sync"
+        chart_done: "Completed", chart_pend: "Pending", btn_cancel: "Cancel", btn_save: "Save", title_login: "Login to Sync",
+        title_update_log: "Update Log 🔄",
+        btn_check_update: "Check for Updates / Refresh App"
     }
 };
 
@@ -110,7 +133,6 @@ function setLanguage(lang) {
     const toggleBtn = document.getElementById('langLabel'); if(toggleBtn) toggleBtn.innerHTML = lang === 'ar' ? 'EN' : 'AR';
     const kbInp = document.getElementById('newKbItem'); if(kbInp) kbInp.placeholder = lang === 'ar' ? 'اكتب اسم المشروع / المهمة هنا... (اضغط Enter لسطر جديد)' : 'Type project name... (Press Enter for new line)';
     const hbInp = document.getElementById('newHabitInput'); if(hbInp) hbInp.placeholder = lang === 'ar' ? 'عادة جديدة...' : 'New habit...';
-    renderViews(); 
 }
 
 function initColorTheme() {
@@ -148,8 +170,8 @@ function loadFromCloud() { db.collection('users').doc(currentUser.uid).get().the
 // دوال الفتح لتفريغ النوافذ 100%
 // ----------------------------------------
 window.openTaskModal = () => { document.getElementById('taskTitle').value = ''; document.getElementById('taskDate').value = currentDailyDate; document.getElementById('taskModal').classList.add('show'); };
-window.openNoteModal = () => { document.getElementById('noteTitle').value = ''; document.getElementById('noteContent').value = ''; document.getElementById('noteDate').value = currentTodayStr; document.getElementById('noteModal').classList.add('show'); };
-window.openLibModal = () => { document.getElementById('libTitle').value = ''; document.getElementById('libCategory').value = ''; document.getElementById('libContent').value = ''; document.getElementById('libraryModal').classList.add('show'); };
+window.openNoteModal = () => { document.getElementById('noteTitle').value = ''; document.getElementById('noteContent').value = ''; document.getElementById('noteDate').value = currentTodayStr; document.getElementById('notePhone').value = ''; document.getElementById('noteModal').classList.add('show'); };
+window.openLibModal = () => { document.getElementById('libTitle').value = ''; document.getElementById('libCategory').value = ''; document.getElementById('libContent').value = ''; document.getElementById('libPhone').value = ''; document.getElementById('libraryModal').classList.add('show'); };
 window.openFinModal = () => { document.getElementById('finDesc').value = ''; document.getElementById('finAmount').value = ''; document.getElementById('finDate').value = currentTodayStr; document.getElementById('financeModal').classList.add('show'); };
 
 window.clearDailyTasks = (type) => { 
@@ -334,7 +356,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initPomodoro(); renderViews();
 });
 
-function renderViews() { renderDashboard(); renderMonthly(); renderDaily(); renderKanban(); renderHabits(); renderFinance(); renderLibrary(); renderNotes(); }
+function renderViews() { renderDashboard(); renderMonthly(); renderDaily(); renderKanban(); renderHabits(); renderFinance(); renderLibrary(); renderNotes(); if(typeof renderChangelog === 'function') renderChangelog(); }
 
 function renderDaily() { 
     const container = document.getElementById('plannerContainer'); container.innerHTML = ''; 
@@ -425,42 +447,58 @@ document.getElementById('updateTaskBtn').onclick = () => {
 // برمجة الملاحظات والمراجع (مع التعديل)
 // ----------------------------------------
 function renderNotes() { 
-    const container = document.getElementById('notesContainer'); 
-    container.innerHTML = notes.length === 0 ? `<p style="text-align:center; color:var(--text-muted); grid-column: 1/-1;">${currentLang==='ar'?'لا توجد ملاحظات.':'No notes.'}</p>` : ''; 
-    notes.forEach(note => { container.innerHTML += `<div class="note-card" onclick="editNote(${note.id})"><button class="delete-note no-print" onclick="event.stopPropagation(); deleteNote(${note.id})"><i class="fa-solid fa-trash"></i></button><span class="note-date"><i class="fa-solid fa-calendar"></i> ${note.date}</span><h3 style="margin-bottom: 0.5rem;">${note.title}</h3><p style="color:var(--text-muted); font-size:0.95rem; white-space: pre-wrap;">${note.content}</p></div>`; }); 
+    const container = document.getElementById('notesContainer');
+    container.innerHTML = notes.length === 0 ? `<p style="text-align:center; color:var(--text-muted); grid-column: 1/-1;">${currentLang==='ar'?'لا توجد ملاحظات.':'No notes.'}</p>` : '';
+    notes.forEach(note => { 
+        let contactHTML = note.phone ? `<div style="display:flex; gap:10px; margin-bottom:10px;"><a href="tel:${note.phone}" class="icon-btn" style="color:var(--primary);"><i class="fa-solid fa-phone"></i></a><a href="https://wa.me/${note.phone.replace(/\+/g,'')}" target="_blank" class="icon-btn" style="color:#25D366;"><i class="fa-brands fa-whatsapp"></i></a></div>` : '';
+        container.innerHTML += `<div class="note-card" onclick="editNote(${note.id})"><button class="delete-note no-print" onclick="event.stopPropagation(); deleteNote(${note.id})"><i class="fa-solid fa-trash"></i></button><span class="note-date"><i class="fa-solid fa-calendar"></i> ${note.date}</span><h3 style="margin-bottom: 0.5rem;">${note.title}</h3>${contactHTML}<div class="render-area" style="background:none; border:none; padding:0;">${linkify(note.content)}</div></div>`; 
+    });
 }
-document.getElementById('saveNoteBtn').onclick = () => { const t = document.getElementById('noteTitle').value, c = document.getElementById('noteContent').value, d = document.getElementById('noteDate').value; if(!t && !c) return; notes.push({ id: Date.now(), title: t || (currentLang==='ar'?'ملاحظة جديدة':'New Note'), content: c, date: d }); saveAll(); document.getElementById('noteModal').classList.remove('show'); stopContinuousDictation(); renderNotes(); };
+document.getElementById('saveNoteBtn').onclick = () => { 
+    const t = document.getElementById('noteTitle').value, c = document.getElementById('noteContent').value, d = document.getElementById('noteDate').value, p = document.getElementById('notePhone').value; 
+    if(!t && !c) return;
+    notes.push({ id: Date.now(), title: t || (currentLang==='ar'?'ملاحظة جديدة':'New Note'), content: c, date: d, phone: p }); 
+    saveAll(); document.getElementById('noteModal').classList.remove('show'); stopContinuousDictation(); renderNotes(); 
+};
 window.deleteNote = id => { notes = notes.filter(n => n.id !== id); saveAll(); renderNotes(); }
 
 window.editNote = (id) => {
     let n = notes.find(x => x.id === id); if(!n) return;
-    document.getElementById('editNoteId').value = n.id; document.getElementById('editNoteTitle').value = n.title; document.getElementById('editNoteDate').value = n.date; document.getElementById('editNoteContent').value = n.content;
+    document.getElementById('editNoteId').value = n.id; document.getElementById('editNoteTitle').value = n.title; document.getElementById('editNoteDate').value = n.date; document.getElementById('editNoteContent').value = n.content; document.getElementById('editNotePhone').value = n.phone || '';
     document.getElementById('editNoteModal').classList.add('show');
 };
 document.getElementById('updateNoteBtn').onclick = () => {
     let id = parseInt(document.getElementById('editNoteId').value); let n = notes.find(x => x.id === id);
-    if(n) { n.title = document.getElementById('editNoteTitle').value; n.date = document.getElementById('editNoteDate').value; n.content = document.getElementById('editNoteContent').value; saveAll(); renderNotes(); document.getElementById('editNoteModal').classList.remove('show'); stopContinuousDictation(); }
+    if(n) { n.title = document.getElementById('editNoteTitle').value; n.date = document.getElementById('editNoteDate').value; n.content = document.getElementById('editNoteContent').value; n.phone = document.getElementById('editNotePhone').value; saveAll(); renderNotes(); document.getElementById('editNoteModal').classList.remove('show'); stopContinuousDictation(); }
 };
 
 function renderLibrary() { 
-    const container = document.getElementById('libraryContainer'); 
-    container.innerHTML = library.map(l => `<div class="lib-card" onclick="editLib(${l.id})"><button class="icon-btn no-print" style="position:absolute; top:10px; left:10px; color:var(--danger);" onclick="event.stopPropagation(); delLib(${l.id})"><i class="fa-solid fa-trash"></i></button><span class="lib-cat">${l.category}</span><h3>${l.title}</h3><div class="render-area">${linkify(l.content)}</div></div>`).join('') || `<p style="text-align:center; color:var(--text-muted); grid-column: 1/-1;">${currentLang==='ar'?'أضف مرجعك الأول.':'Add your first reference.'}</p>`; 
+    const container = document.getElementById('libraryContainer');
+    container.innerHTML = library.map(l => {
+        let contactHTML = l.phone ? `<a href="tel:${l.phone}" style="margin-left:10px; color:var(--primary);"><i class="fa-solid fa-phone"></i></a><a href="https://wa.me/${l.phone.replace(/\+/g,'')}" target="_blank" style="margin-left:10px; color:#25D366;"><i class="fa-brands fa-whatsapp"></i></a>` : '';
+        return `<div class="lib-card" onclick="editLib(${l.id})"><button class="icon-btn no-print" style="position:absolute; top:10px; left:10px; color:var(--danger);" onclick="event.stopPropagation(); delLib(${l.id})"><i class="fa-solid fa-trash"></i></button><span class="lib-cat">${l.category}</span><h3>${contactHTML}${l.title}</h3><div class="render-area">${linkify(l.content)}</div></div>`;
+    }).join('') || `<p style="text-align:center; color:var(--text-muted); grid-column: 1/-1;">${currentLang==='ar'?'أضف مرجعك الأول.':'Add your first reference.'}</p>`;
 }
-document.getElementById('saveLibBtn').onclick = () => { let t = document.getElementById('libTitle').value, c = document.getElementById('libCategory').value, text = document.getElementById('libContent').value; if(!t) return; library.push({ id: Date.now(), title: t, category: c || 'عام', content: text }); saveAll(); document.getElementById('libraryModal').classList.remove('show'); stopContinuousDictation(); renderLibrary(); };
+document.getElementById('saveLibBtn').onclick = () => { 
+    let t = document.getElementById('libTitle').value, c = document.getElementById('libCategory').value, text = document.getElementById('libContent').value, p = document.getElementById('libPhone').value; 
+    if(!t) return;
+    library.push({ id: Date.now(), title: t, category: c || 'عام', content: text, phone: p }); 
+    saveAll(); document.getElementById('libraryModal').classList.remove('show'); stopContinuousDictation(); renderLibrary(); 
+};
 window.delLib = id => { library = library.filter(l => l.id !== id); saveAll(); renderLibrary(); }
 
 window.editLib = (id) => {
     let l = library.find(x => x.id === id); if(!l) return;
-    document.getElementById('editLibId').value = l.id; document.getElementById('editLibTitle').value = l.title; document.getElementById('editLibCategory').value = l.category; document.getElementById('editLibContent').value = l.content;
+    document.getElementById('editLibId').value = l.id; document.getElementById('editLibTitle').value = l.title; document.getElementById('editLibCategory').value = l.category; document.getElementById('editLibContent').value = l.content; document.getElementById('editLibPhone').value = l.phone || '';
     document.getElementById('editLibModal').classList.add('show');
 };
 document.getElementById('updateLibBtn').onclick = () => {
     let id = parseInt(document.getElementById('editLibId').value); let l = library.find(x => x.id === id);
-    if(l) { l.title = document.getElementById('editLibTitle').value; l.category = document.getElementById('editLibCategory').value; l.content = document.getElementById('editLibContent').value; saveAll(); renderLibrary(); document.getElementById('editLibModal').classList.remove('show'); stopContinuousDictation(); }
+    if(l) { l.title = document.getElementById('editLibTitle').value; l.category = document.getElementById('editLibCategory').value; l.content = document.getElementById('editLibContent').value; l.phone = document.getElementById('editLibPhone').value; saveAll(); renderLibrary(); document.getElementById('editLibModal').classList.remove('show'); stopContinuousDictation(); }
 };
 
 // ==========================================
-// برمجة خطة الشهر (المزامنة الاحترافية مع جدول اليوم)
+// برمجة خطة الشهر (المطورة: المزامنة + دعم الاتصال والواتساب)
 // ==========================================
 function renderMonthly() { 
     const container = document.getElementById('monthlyContainer'); 
@@ -471,19 +509,22 @@ function renderMonthly() {
     const daysInMonth = new Date(currentYearView, currentMonthView + 1, 0).getDate(); 
     let dayText = currentLang === 'ar' ? 'اليوم:' : 'Day:'; 
     let placeholderText = currentLang === 'ar' ? 'اكتب خطتك (الروابط تعمل تلقائياً)' : 'Type your plan (links work automatically)'; 
+    let phonePlaceholder = currentLang === 'ar' ? 'رقم الهاتف...' : 'Phone...';
     
-    // اكتشاف تاريخ اليوم الواقعي لتمييزه
     const todayObj = new Date();
     const isCurrentMonth = (todayObj.getMonth() === currentMonthView && todayObj.getFullYear() === currentYearView);
     const todayDate = todayObj.getDate();
 
     for(let i = 1; i <= daysInMonth; i++) { 
         let storageKey = `PlannerMonthData_${currentYearView}_${currentMonthView}_${i}`; 
+        let phoneKey = storageKey + '_phone'; 
+        
         let savedText = localStorage.getItem(storageKey) || ""; 
+        let savedPhone = localStorage.getItem(phoneKey) || "";
+        
         const dayDiv = document.createElement('div'); 
         dayDiv.className = 'month-day-card'; 
         
-        // تمييز كارت اليوم الحالي وإعطاؤه ID للنزول إليه
         if (isCurrentMonth && i === todayDate) {
             dayDiv.id = 'todayMonthCard';
             dayDiv.style.border = '2px solid var(--primary)';
@@ -491,12 +532,32 @@ function renderMonthly() {
 
         let isTodayText = (isCurrentMonth && i === todayDate) ? (currentLang === 'ar' ? '(اليوم)' : '(Today)') : '';
 
-        dayDiv.innerHTML = `<div class="month-day-header"><span>${dayText} ${i} ${mNames[currentMonthView]} <b style="color:var(--primary);">${isTodayText}</b></span></div><textarea class="multi-line-input no-print" rows="3" data-key="${storageKey}" data-day="${i}" placeholder="${placeholderText}">${savedText}</textarea><div class="render-area">${linkify(savedText)}</div>`; 
+        // نظام أيقونات الاتصال والواتساب
+        let contactIcons = savedPhone ? `
+            <div style="display:inline-flex; gap:10px; margin-right:10px;">
+                <a href="tel:${savedPhone}" class="no-print" style="color:var(--primary); font-size:1.1rem;"><i class="fa-solid fa-phone"></i></a>
+                <a href="https://wa.me/${savedPhone.replace(/\+/g,'')}" target="_blank" class="no-print" style="color:#25D366; font-size:1.1rem;"><i class="fa-brands fa-whatsapp"></i></a>
+            </div>` : '';
+
+        dayDiv.innerHTML = `
+            <div class="month-day-header" style="display:flex; justify-content:space-between; align-items:center;">
+                <span>${dayText} ${i} ${mNames[currentMonthView]} <b style="color:var(--primary);">${isTodayText}</b></span>
+                ${contactIcons}
+            </div>
+            <textarea class="multi-line-input no-print" rows="3" data-key="${storageKey}" data-day="${i}" placeholder="${placeholderText}">${savedText}</textarea>
+            <input type="tel" class="no-print" value="${savedPhone}" data-phone-key="${phoneKey}" placeholder="${phonePlaceholder}" 
+                style="width:100%; margin-top:5px; padding:8px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-color); color:var(--text-main); font-size:0.85rem;">
+            <div class="render-area">${linkify(savedText)}</div>`; 
+            
         container.appendChild(dayDiv); 
     } 
     
+    // ربط أحداث الكتابة في الخطة
     document.querySelectorAll('.multi-line-input').forEach(ta => { 
-        ta.oninput = e => { e.target.nextElementSibling.innerHTML = linkify(e.target.value); }; 
+        ta.oninput = e => { 
+            // التعديل هنا للوصول لمنطقة العرض بشكل صحيح بعد إضافة خانة الهاتف
+            e.target.nextElementSibling.nextElementSibling.innerHTML = linkify(e.target.value); 
+        }; 
         ta.onchange = e => { 
             let newText = e.target.value;
             localStorage.setItem(e.target.dataset.key, newText); 
@@ -513,36 +574,29 @@ function renderMonthly() {
             } else {
                 let taskLabel = (currentLang === 'ar' ? '📌 خطة الشهر: ' : '📌 Month Plan: ') + newText.trim();
                 if (existingTaskIndex !== -1) {
-                    // التعديل: استخدام title لتتوافق مع جدول اليوم
                     tasks[existingTaskIndex].title = taskLabel;
                 } else {
-                    tasks.push({
-                        id: Date.now(),
-                        title: taskLabel, // التعديل: استخدام title
-                        date: targetDateStr,
-                        hour: 6, // التعديل: استخدام hour ورقم 6
-                        completed: false,
-                        isMonthly: true 
-                    });
+                    tasks.push({ id: Date.now(), title: taskLabel, date: targetDateStr, hour: 6, completed: false, isMonthly: true });
                 }
             }
-
             saveAll(); 
-            if (typeof currentDailyDate !== 'undefined' && currentDailyDate === targetDateStr && typeof renderDaily === 'function') {
-                renderDaily();
-            }
+            if (typeof currentDailyDate !== 'undefined' && currentDailyDate === targetDateStr && typeof renderDaily === 'function') renderDaily();
         }; 
     }); 
 
-    /// النزول التلقائي (Scroll) إلى يومنا الحالي ليكون في منتصف الشاشة بدقة
+    // ربط أحداث إدخال الهاتف
+    document.querySelectorAll('input[data-phone-key]').forEach(inp => {
+        inp.onchange = e => {
+            localStorage.setItem(e.target.dataset.phoneKey, e.target.value);
+            renderMonthly(); // تحديث فوري لإظهار الأيقونات
+        };
+    });
+
     if (isCurrentMonth) {
         setTimeout(() => {
             let todayCard = document.getElementById('todayMonthCard');
-            if (todayCard) {
-                // التعديل السحري هنا: استخدام center بدلاً من start
-                todayCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-        }, 300); // تأخير بسيط لضمان تحميل الشاشة
+            if (todayCard) todayCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 300);
     }
 }
 
@@ -655,6 +709,7 @@ function renderKanban() {
                 <div style="display:flex; justify-content:space-between; align-items: flex-start; margin-bottom:5px;">
                     <strong style="font-size: 1rem; flex:1;">${i.text}</strong>
                     <div style="display:flex; gap:8px; align-items: center;">
+                        ${i.phone ? `<a href="https://wa.me/${i.phone.replace(/\+/g,'')}" target="_blank" class="no-print" style="color:#25D366; font-size:1.2rem;"><i class="fa-brands fa-whatsapp"></i></a>` : ''}
                         <button onclick="moveKb(${i.id}, '${col}', -1)" class="icon-btn no-print" style="color:var(--text-main);" title="نقل للسابق"><i class="fa-solid fa-arrow-right"></i></button>
                         <button onclick="addSubtask(${i.id}, '${col}')" class="icon-btn no-print" style="color:var(--primary);" title="إضافة قسم فرعي"><i class="fa-solid fa-plus"></i></button>
                         <button onclick="editKb(${i.id}, '${col}')" class="icon-btn no-print" style="color:var(--text-muted);" title="تعديل المشروع"><i class="fa-solid fa-pen"></i></button>
@@ -770,3 +825,44 @@ window.changeFontSize = (size) => {
     document.documentElement.style.fontSize = size;
     localStorage.setItem('plannerFontSize', size);
 };
+
+// ==========================================
+// برمجة سجل التحديثات والبحث اليدوي
+// ==========================================
+window.renderChangelog = () => {
+    const container = document.getElementById('changelogContainer');
+    if(!container) return;
+    const notesTitle = currentLang === 'ar' ? '<strong style="color:var(--primary);">ميزات الإصدار الأخير:</strong><br>' : '<strong style="color:var(--primary);">Latest Version Features:</strong><br>';
+    const notesList = latestReleaseNotes[currentLang].map(note => `- ${note}`).join('<br>');
+    container.innerHTML = notesTitle + notesList;
+};
+
+const manualUpBtn = document.getElementById('manualUpdateBtn');
+if(manualUpBtn) {
+    manualUpBtn.onclick = () => {
+        const originalHtml = manualUpBtn.innerHTML;
+        manualUpBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> ' + (currentLang === 'ar' ? 'جاري البحث...' : 'Checking...');
+        
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistration().then(reg => {
+                if (reg) {
+                    reg.update().then(() => {
+                        if (reg.waiting) {
+                            // إذا كان هناك تحديث تم تأجيله، قم بتفعيله الآن
+                            reg.waiting.postMessage({ action: 'skipWaiting' });
+                        } else {
+                            setTimeout(() => {
+                                alert(currentLang === 'ar' ? 'أنت تستخدم أحدث نسخة بالفعل!' : 'You are already on the latest version!');
+                                manualUpBtn.innerHTML = originalHtml;
+                            }, 800);
+                        }
+                    });
+                } else {
+                    manualUpBtn.innerHTML = originalHtml;
+                }
+            });
+        } else {
+            manualUpBtn.innerHTML = originalHtml;
+        }
+    };
+}
