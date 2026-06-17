@@ -21,7 +21,9 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0/default.min.css">
     <script src="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0/index.min.js"></script>
     
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -86,8 +88,15 @@
                 </div>
             </div>
 
-            <div id="financeView" class="view-section">
-                <div class="content-header" style="display: flex; justify-content: space-between;"><h2 data-i18n="title_finance">المتتبع المالي</h2><button class="btn btn-primary no-print" onclick="openFinModal()"><i class="fa-solid fa-plus"></i> <span data-i18n="btn_add_trans">معاملة</span></button></div>
+           <div id="financeView" class="view-section">
+                <div class="content-header" style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                    <h2 data-i18n="title_finance">المتتبع المالي</h2>
+                    <div style="display: flex; gap: 10px;" class="no-print">
+                        <button class="btn btn-secondary" onclick="exportFinanceExcel()" title="تصدير Excel"><i class="fa-solid fa-file-excel" style="color: #10b981; font-size: 1.2rem;"></i></button>
+                        <button class="btn btn-secondary" onclick="exportFinancePDF()" title="تصدير PDF"><i class="fa-solid fa-file-pdf" style="color: #ef4444; font-size: 1.2rem;"></i></button>
+                        <button class="btn btn-primary" onclick="openFinModal()"><i class="fa-solid fa-plus"></i> <span data-i18n="btn_add_trans">معاملة</span></button>
+                    </div>
+                </div>
                 <div class="finance-summary"><div class="fin-box fin-income"><span data-i18n="fin_inc">الدخل</span><h3 id="totalIncome">0</h3></div><div class="fin-box fin-expense"><span data-i18n="fin_exp">المصروفات</span><h3 id="totalExpense">0</h3></div><div class="fin-box fin-balance"><span data-i18n="fin_bal">الرصيد</span><h3 id="netBalance">0</h3></div></div>
                 <div class="finance-list" id="financeContainer"></div>
             </div>
@@ -120,6 +129,7 @@
             <div id="pomodoroView" class="view-section">
                 <div class="content-header"><h2 data-i18n="title_pom">مؤقت التركيز (Pomodoro)</h2></div>
                 <div class="pomodoro-container">
+                <div id="tomatoIcon" class="tomato-logo no-print">🍅</div>
                     <div class="pomodoro-tabs"><button id="pomWork" class="active" data-i18n="btn_work">عمل</button><button id="pomBreak" data-i18n="btn_break">استراحة</button></div>
                     <div class="pomodoro-settings no-print" style="margin-bottom:15px; display:flex; justify-content:center; align-items:center; gap:15px;">
                         <button id="pomMinus" class="icon-btn" style="background:var(--bg-color); border-radius:50%; width:35px; height:35px;">-</button>
@@ -251,8 +261,8 @@
         </div>
     </div>
 
-    <div id="financeModal" class="modal"><div class="modal-content"><h3 data-i18n="btn_add_trans">إضافة معاملة</h3><input type="text" id="finDesc" placeholder="الوصف" required><div class="input-group"><input type="number" id="finAmount" placeholder="المبلغ" required><select id="finType"><option value="income">إيراد (+)</option><option value="expense">مصروف (-)</option></select></div><input type="date" id="finDate" style="margin-top:10px;"><div class="modal-actions"><button class="btn btn-secondary close-modal" data-i18n="btn_cancel">إلغاء</button><button id="saveFinBtn" class="btn btn-primary" data-i18n="btn_save">حفظ</button></div></div></div>
-    <div id="editFinModal" class="modal"><div class="modal-content"><h3 data-i18n="btn_edit_trans">تعديل المعاملة</h3><input type="hidden" id="editFinId"><input type="text" id="editFinDesc" required><div class="input-group"><input type="number" id="editFinAmount" required><select id="editFinType"><option value="income">إيراد (+)</option><option value="expense">مصروف (-)</option></select></div><input type="date" id="editFinDate" style="margin-top:10px;"><div class="modal-actions"><button class="btn btn-secondary close-modal" data-i18n="btn_cancel">إلغاء</button><button id="updateFinBtn" class="btn btn-primary" data-i18n="btn_update">تحديث</button></div></div></div>
+    <div id="financeModal" class="modal"><div class="modal-content"><h3 data-i18n="btn_add_trans">إضافة معاملة</h3><input type="text" id="finDesc" placeholder="الوصف" required><div class="input-group"><input type="number" id="finAmount" placeholder="المبلغ" required style="transition:0.3s;"><select id="finType" onchange="updateFinColor('finType', 'finAmount')" style="transition:0.3s; font-weight:bold;"><option value="income" style="color:green;">إيراد (+)</option><option value="expense" style="color:red;">مصروف (-)</option></select></div><input type="date" id="finDate" style="margin-top:10px;"><div class="modal-actions"><button class="btn btn-secondary close-modal" data-i18n="btn_cancel">إلغاء</button><button id="saveFinBtn" class="btn btn-primary" data-i18n="btn_save">حفظ</button></div></div></div>
+    <div id="editFinModal" class="modal"><div class="modal-content"><h3 data-i18n="btn_edit_trans">تعديل المعاملة</h3><input type="hidden" id="editFinId"><input type="text" id="editFinDesc" required><div class="input-group"><input type="number" id="editFinAmount" required style="transition:0.3s;"><select id="editFinType" onchange="updateFinColor('editFinType', 'editFinAmount')" style="transition:0.3s; font-weight:bold;"><option value="income" style="color:green;">إيراد (+)</option><option value="expense" style="color:red;">مصروف (-)</option></select></div><input type="date" id="editFinDate" style="margin-top:10px;"><div class="modal-actions"><button class="btn btn-secondary close-modal" data-i18n="btn_cancel">إلغاء</button><button id="updateFinBtn" class="btn btn-primary" data-i18n="btn_update">تحديث</button></div></div></div>
 
     <div id="libraryModal" class="modal">
         <div class="modal-content">
@@ -343,6 +353,36 @@
         <div style="display: flex; gap: 10px; margin-top: 10px;">
             <button id="reloadAppBtn" class="btn btn-primary" style="flex:1;">تحديث الآن</button>
             <button class="btn btn-secondary" onclick="document.getElementById('updateToast').style.display='none';" style="flex:1;">ليس الآن</button>
+        </div>
+    </div>
+
+<div id="changelogModal" class="modal">
+        <div class="modal-content">
+            <h3 style="color: var(--primary); margin-bottom: 15px;"><i class="fa-solid fa-gift"></i> <span data-i18n="title_update_log">الجديد في هذا الإصدار ✨</span></h3>
+            <div id="changelogContent" style="line-height: 1.8; color: var(--text-main); font-size: 0.95rem; margin-bottom: 20px;"></div>
+            <div class="modal-actions">
+                <button class="btn btn-primary close-modal" style="width: 100%;" onclick="closeChangelog()">رائع، شكراً!</button>
+            </div>
+        </div>
+    </div>
+
+<div id="shareModal" class="modal">
+        <div class="modal-content" style="text-align: center;">
+            <h3 data-i18n="btn_invite" style="margin-bottom: 5px;">دعوة</h3>
+            <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 0.9rem;" data-i18n="share_desc">شارك التطبيق مع أصدقائك لزيادة إنتاجيتهم!</p>
+            <div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; margin-bottom: 20px;">
+                <a id="shareWa" href="#" target="_blank" class="icon-btn" style="color: #25D366; font-size: 2.5rem;"><i class="fa-brands fa-whatsapp"></i></a>
+                <a id="shareFb" href="#" target="_blank" class="icon-btn" style="color: #1877F2; font-size: 2.5rem;"><i class="fa-brands fa-facebook"></i></a>
+                <a id="shareX" href="#" target="_blank" class="icon-btn" style="color: var(--text-main); font-size: 2.5rem;"><i class="fa-brands fa-x-twitter"></i></a>
+                <a id="shareTg" href="#" target="_blank" class="icon-btn" style="color: #0088cc; font-size: 2.5rem;"><i class="fa-brands fa-telegram"></i></a>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="shareLinkInput" value="https://eslam-planner.github.io/" readonly style="flex: 1; margin-top: 0; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-main); text-align: left; direction: ltr;">
+                <button id="copyLinkBtn" class="btn btn-primary" title="نسخ الرابط"><i class="fa-solid fa-copy"></i></button>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary close-modal" data-i18n="btn_cancel" style="width: 100%;">إلغاء</button>
+            </div>
         </div>
     </div>
 

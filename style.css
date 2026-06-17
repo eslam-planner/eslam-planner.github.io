@@ -102,3 +102,174 @@ textarea { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var
     .pomodoro-timer { font-size: 4.5rem; } 
 }
 @media print { .no-print, .sidebar, .header-actions { display: none !important; } .content { padding: 0; } .header { position: static; border-bottom: 2px solid black;} textarea { display: none; } .render-area { border: none; padding: 0; } body { background-color: white; color: black; } .view-section { display: block !important; page-break-after: always; } }
+
+/* =========================================
+   UI/UX Animations & Pomodoro Tomato
+========================================= */
+/* 1. دخول سلس للصفحات */
+.view-section { display: none; opacity: 0; }
+.view-section.active { display: block; animation: slideUpFade 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+@keyframes slideUpFade {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* 2. تأثيرات النوافذ المنبثقة (Modals) */
+.modal { transition: opacity 0.3s ease; }
+.modal-content { transform: scale(0.9) translateY(-20px); transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.modal.show .modal-content { transform: scale(1) translateY(0); }
+
+/* 3. تأثيرات تفاعلية ثلاثية الأبعاد للكروت والأزرار */
+.dash-card, .kb-card, .note-card, .lib-card, .month-day-card, .fin-item, .daily-task-item { transition: all 0.3s ease; }
+.dash-card:hover, .kb-card:hover, .note-card:hover, .lib-card:hover, .month-day-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+    border-color: var(--primary);
+}
+.btn { transition: all 0.2s ease; }
+.btn:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+.btn:active { transform: translateY(0); }
+
+/* 4. تصميم وأنيميشن لوجو الطماطم (Pomodoro) */
+.tomato-logo {
+    font-size: 5rem; display: inline-block; margin-bottom: 15px;
+    animation: breathe 4s ease-in-out infinite;
+    filter: drop-shadow(0 10px 15px rgba(239, 68, 68, 0.3)); transition: all 0.3s ease;
+}
+.tomato-logo.running { animation: heartbeat 1.2s ease-in-out infinite; }
+@keyframes breathe { 0%, 100% { transform: scale(1) translateY(0); } 50% { transform: scale(1.05) translateY(-5px); } }
+@keyframes heartbeat { 0% { transform: scale(1); } 15% { transform: scale(1.15); } 30% { transform: scale(1); } 45% { transform: scale(1.15); } 100% { transform: scale(1); } }
+
+/* =========================================
+   UI/UX Animations & Professional Polish
+========================================= */
+
+/* دخول سلس ونعومة في التنقل بين الصفحات */
+.view-section { display: none; opacity: 0; }
+.view-section.active { display: block; animation: slideUpFade 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+@keyframes slideUpFade {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* تأثيرات النوافذ المنبثقة (Modals) */
+.modal { transition: opacity 0.3s ease; backdrop-filter: blur(4px); }
+.modal-content { transform: scale(0.9) translateY(-20px); transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.modal.show .modal-content { transform: scale(1) translateY(0); }
+
+/* تأثيرات تفاعلية ثلاثية الأبعاد للكروت والأزرار */
+.dash-card, .kb-card, .note-card, .lib-card, .month-day-card, .fin-item, .daily-task-item {
+    transition: all 0.3s ease;
+}
+.dash-card:hover, .kb-card:hover, .note-card:hover, .lib-card:hover, .month-day-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+    border-color: var(--primary);
+}
+
+.btn { transition: all 0.2s ease; position: relative; overflow: hidden; }
+.btn:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+.btn:active { transform: translateY(0); }
+
+/* أنيميشن القائمة الجانبية */
+.nav-item { transition: all 0.3s ease; }
+.nav-item:hover { transform: translateX(-5px); }
+html[dir="ltr"] .nav-item:hover { transform: translateX(5px); }
+
+/* تأثير تحميل ناعم للإحصائيات */
+.dash-num { animation: popIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+@keyframes popIn {
+    0% { opacity: 0; transform: scale(0.8); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+/* ==========================================================================
+   ADVANCED UI/UX LUXURY ANIMATIONS (REACT-FLUID FEEL) - COMPATIBLE WITH ALL DEVICES
+   ========================================================================== */
+
+/* 1. انتقالات الصفحات فائقة النعومة مع تأثير هيدروليكي هادئ */
+.view-section { 
+    display: none; 
+    opacity: 0; 
+    will-change: transform, opacity;
+}
+.view-section.active { 
+    display: block; 
+    animation: fluidPageTransition 0.55s cubic-bezier(0.25, 1, 0.5, 1) forwards; 
+}
+
+@keyframes fluidPageTransition {
+    from { 
+        opacity: 0; 
+        transform: translateY(24px) scale(0.99); 
+    }
+    to { 
+        opacity: 1; 
+        transform: translateY(0) scale(1); 
+    }
+}
+
+/* 2. تأثيرات النوافذ المنبثقة السينمائية المعتمدة على منحنى الينابيع الهيدروليكية */
+.modal { 
+    transition: opacity 0.35s cubic-bezier(0.25, 1, 0.5, 1); 
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px); /* حرج لدعم متصفح سفاري وآيفون */
+}
+.modal-content { 
+    transform: scale(0.92) translateY(-15px); 
+    transition: all 0.45s cubic-bezier(0.34, 1.56, 0.64, 1); /* تأثير الارتداد الزنبركي الأنيق */
+}
+.modal.show .modal-content { 
+    transform: scale(1) translateY(0); 
+}
+
+/* 3. تأثيرات حركية تفاعلية ثلاثية الأبعاد خفيفة للكروت عند تمرير الماوس أو اللمس */
+.dash-card, .kb-card, .note-card, .lib-card, .month-day-card, .fin-item, .daily-task-item {
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), 
+                box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1), 
+                border-color 0.3s ease;
+    touch-action: manipulation; /* تسريع استجابة اللمس في الـ iPad والموبايل */
+}
+.dash-card:hover, .kb-card:hover, .note-card:hover, .lib-card:hover, .month-day-card:hover, .fin-item:hover {
+    transform: translateY(-5px) scale(1.015);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.06), 0 4px 8px rgba(0, 0, 0, 0.02);
+    border-color: var(--primary);
+}
+
+/* 4. تأثير النبض البصري المتجاوب للأزرار عند النقر */
+.btn { 
+    transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1); 
+    position: relative;
+}
+.btn:hover { 
+    transform: translateY(-2px); 
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08); 
+    filter: brightness(1.05);
+}
+.btn:active { 
+    transform: translateY(1px); 
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); 
+}
+
+/* 5. حركة انزلاقية جانبية ذكية لعناصر القائمة الجانبية للتنقل */
+.nav-item { 
+    transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1); 
+}
+.nav-item:hover { 
+    transform: translateX(-6px); 
+    background-color: rgba(100, 100, 100, 0.04);
+}
+html[dir="ltr"] .nav-item:hover { 
+    transform: translateX(6px); 
+}
+
+/* 6. تأثير تشطيب المهام الأنيق (Striking Dynamic) عند الضغط على Checkbox */
+.daily-task-item.completed {
+    animation: taskSuccessPulse 0.4s ease-in-out;
+}
+@keyframes taskSuccessPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(0.98); background-color: rgba(16, 185, 129, 0.03); }
+    100% { transform: scale(1); }
+}

@@ -6,11 +6,28 @@ const latestReleaseNotes = {
         "تطوير خطة الشهر وإضافة حفظ أرقام الهواتف."
     ],
     en: [
-        "Enabled clickable links in Notes & Library.",
-        "Added quick call and WhatsApp icons.",
-        "Upgraded Monthly Plan with phone number saving."
+        "Added Export to PDF & Excel in Finance.",
+        "New beautiful Changelog screen.",
+        "Professional UI & Animations."
     ]
 };
+
+// كود إظهار صندوق التحديثات التلقائي
+const APP_VERSION = 'v12'; // يجب تغييره هنا مع كل تحديث رئيسي مستقبلاً
+function checkAndShowChangelog() {
+    const savedVersion = localStorage.getItem('fp_version');
+    if(savedVersion !== APP_VERSION) {
+        setTimeout(() => {
+            const content = document.getElementById('changelogContent');
+            if(content) {
+                content.innerHTML = latestReleaseNotes[currentLang].map(n => `✅ ${n}`).join('<br><br>');
+                document.getElementById('changelogModal').classList.add('show');
+            }
+            localStorage.setItem('fp_version', APP_VERSION);
+        }, 1500); // تظهر بعد ثانية ونصف من الدخول
+    }
+}
+window.closeChangelog = () => { document.getElementById('changelogModal').classList.remove('show'); };
 
 // 2. PWA & Update Notification
 let deferredPrompt;
@@ -172,7 +189,7 @@ function loadFromCloud() { db.collection('users').doc(currentUser.uid).get().the
 window.openTaskModal = () => { document.getElementById('taskTitle').value = ''; document.getElementById('taskDate').value = currentDailyDate; document.getElementById('taskModal').classList.add('show'); };
 window.openNoteModal = () => { document.getElementById('noteTitle').value = ''; document.getElementById('noteContent').value = ''; document.getElementById('noteDate').value = currentTodayStr; document.getElementById('notePhone').value = ''; document.getElementById('noteModal').classList.add('show'); };
 window.openLibModal = () => { document.getElementById('libTitle').value = ''; document.getElementById('libCategory').value = ''; document.getElementById('libContent').value = ''; document.getElementById('libPhone').value = ''; document.getElementById('libraryModal').classList.add('show'); };
-window.openFinModal = () => { document.getElementById('finDesc').value = ''; document.getElementById('finAmount').value = ''; document.getElementById('finDate').value = currentTodayStr; document.getElementById('financeModal').classList.add('show'); };
+window.openFinModal = () => { document.getElementById('finDesc').value = ''; document.getElementById('finAmount').value = ''; document.getElementById('finDate').value = currentTodayStr; document.getElementById('financeModal').classList.add('show'); setTimeout(() => { if(window.updateFinColor) updateFinColor('finType', 'finAmount'); }, 50); };
 
 window.clearDailyTasks = (type) => { 
     if(type === 'completed') { if(confirm(currentLang==='ar'?'مسح المهام المكتملة لهذا اليوم فقط؟':'Clear completed tasks for today?')) { tasks = tasks.filter(t => !(t.completed && t.date === currentTodayStr)); saveAll(); renderViews(); } } 
@@ -270,7 +287,8 @@ window.stopContinuousDictation = () => {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-
+    checkAndShowChangelog(); // التحقق من وجود تحديث جديد لعرض النافذة
+    
 // كود ضبط التاريخ التلقائي والمزامنة مع منتصف الليل محلياً
     const setTodayDateAuto = () => {
         const today = new Date();
@@ -311,12 +329,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const reloadBtn = document.getElementById('reloadAppBtn');
     if (reloadBtn) {
         reloadBtn.addEventListener('click', () => {
-            document.getElementById('updateToast').style.display = 'none'; // إخفاء النافذة فوراً
+            document.getElementById('updateToast').style.display = 'none';
             if (newWorker) {
+                // إرسال الأمر للسيرفس وركر ليتولى هو عملية إعادة التحميل بعد التفعيل لضمان جلب الكود الجديد
                 newWorker.postMessage({ action: 'skipWaiting' });
+            } else {
+                window.location.reload(true);
             }
-            // استخدام خدعة href للتحديث بدلاً من reload(true) لضمان عملها أوفلاين
-            setTimeout(() => { window.location.href = window.location.href; }, 300);
         });
     }
    
@@ -338,10 +357,28 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('langToggleBtn').onclick = () => { setLanguage(currentLang === 'ar' ? 'en' : 'ar'); };
     
     document.getElementById('shareEmptyBtn').onclick = () => {
-        const text = currentLang === 'ar' ? "جربت تطبيق Planner Pro Max لتنظيم الوقت وإدارة المهام وكان ممتاز! جربه مجاناً من هنا: https://eslam-planner.github.io/" : "Try out Planner Pro Max for free: https://eslam-planner.github.io/";
-        if (navigator.share) { navigator.share({ title: 'Planner Pro Max', text: text, url: 'https://eslam-planner.github.io/' }).catch(console.error);
-        } else { window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank'); }
-    };
+    const text = currentLang === 'ar' ? "جربت تطبيق Planner Pro Max لتنظيم الوقت وإدارة المهام وكان ممتاز! جربه مجاناً من هنا: https://eslam-planner.github.io/" : "Try out Planner Pro Max for free: https://eslam-planner.github.io/";
+    const url = "https://eslam-planner.github.io/";
+    
+    if (navigator.share && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) { 
+        navigator.share({ title: 'Planner Pro Max', text: text, url: url }).catch(console.error);
+    } else { 
+        document.getElementById('shareWa').href = `https://wa.me/?text=${encodeURIComponent(text)}`;
+        document.getElementById('shareFb').href = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+        document.getElementById('shareX').href = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+        document.getElementById('shareTg').href = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
+        document.getElementById('shareModal').classList.add('show');
+    }
+};
+
+document.getElementById('copyLinkBtn').onclick = () => {
+    const linkInput = document.getElementById('shareLinkInput');
+    linkInput.select(); document.execCommand('copy');
+    const btn = document.getElementById('copyLinkBtn');
+    const originalHtml = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-check"></i>';
+    setTimeout(() => { btn.innerHTML = originalHtml; }, 2000);
+};
 
     const viewDailyDate = document.getElementById('viewDailyDate');
     if(viewDailyDate) { viewDailyDate.value = currentDailyDate; viewDailyDate.addEventListener('change', (e) => { currentDailyDate = e.target.value; renderDaily(); }); }
@@ -649,7 +686,8 @@ function initPomodoro() {
     document.getElementById('pomBreak').onclick = () => setMode('break', 5); 
     
     startBtn.onclick = () => { 
-        if(isPomRunning) return; 
+        if(isPomRunning) return;
+        const tomato = document.getElementById('tomatoIcon'); if(tomato) tomato.classList.add('running'); 
         
         // محاولة إضافية لفك الحظر عند الضغط على "ابدأ" كإجراء احتياطي
         if(alarm) { alarm.play().then(()=>alarm.pause()).catch(e=>{}); }
@@ -663,7 +701,7 @@ function initPomodoro() {
                 isPomRunning=false; 
                 pomTimeLeft=0; 
                 updateTimeDisplay(); 
-                
+                const tomato = document.getElementById('tomatoIcon'); if(tomato) tomato.classList.remove('running');
                 // تشغيل الصوت بقوة عند انتهاء الوقت
                 if(alarm) { alarm.currentTime = 0; alarm.play().catch(e=>console.log("Audio Play Blocked:", e)); }
                 
@@ -677,9 +715,10 @@ function initPomodoro() {
         }, 1000); 
     }; 
     
-    pauseBtn.onclick = () => { clearInterval(pomTimer); isPomRunning=false; }; 
+    pauseBtn.onclick = () => { clearInterval(pomTimer); isPomRunning=false; const tomato = document.getElementById('tomatoIcon'); if(tomato) tomato.classList.remove('running'); }; 
     document.getElementById('pomReset').onclick = () => setMode(pomMode, pomMode==='work'?workDuration:5); 
-    stopBtn.onclick = () => { if(alarm){ alarm.pause(); alarm.currentTime = 0; } setMode(pomMode === 'work' ? 'break' : 'work', pomMode === 'work' ? 5 : workDuration); };
+    stopBtn.onclick = () => { if(alarm){ alarm.pause(); alarm.currentTime = 0;
+} const tomato = document.getElementById('tomatoIcon'); if(tomato) tomato.classList.remove('running'); setMode(pomMode === 'work' ? 'break' : 'work', pomMode === 'work' ? 5 : workDuration); };
     
     updateTimeDisplay(); 
 }
@@ -807,9 +846,10 @@ window.delSubtask = (id, col, subIdx) => {
 };
 
 function renderDashboard() { let dashClearedStr = localStorage.getItem('fp_dash_cleared'); let activeTasks = (dashClearedStr === currentTodayStr) ? [] : tasks.filter(t => t.date === currentTodayStr); let completed = activeTasks.filter(t => t.completed).length; document.getElementById('dashTasks').innerText = `${completed} / ${activeTasks.length}`; let tHC = 0; let dHC = 0; habits.forEach(h => { for(let i=1; i<=30; i++) { tHC++; if(h.days[`${currentYearView}-${currentMonthView}-${i}`]) dHC++; } }); document.getElementById('dashHabits').innerText = `${tHC === 0 ? 0 : Math.round((dHC/tHC)*100)}%`; let balance = finances.reduce((acc, curr) => curr.type === 'income' ? acc + Number(curr.amount) : acc - Number(curr.amount), 0); document.getElementById('dashBalance').innerText = `${balance}`; let resetDate = localStorage.getItem('fp_stats_reset') || "2000-01-01"; const ctx = document.getElementById('tasksChart').getContext('2d'); if(myChart) myChart.destroy(); let labels = []; let dataDone = []; let dataPending = []; for(let i=6; i>=0; i--) { let d = new Date(); d.setDate(d.getDate() - i); let dateStr = new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().split('T')[0]; labels.push(d.toLocaleDateString(currentLang==='ar'?'ar-EG':'en-US', {weekday: 'short'})); let dayTasks = tasks.filter(t => t.date === dateStr && t.date >= resetDate); dataDone.push(dayTasks.filter(t => t.completed).length); dataPending.push(dayTasks.filter(t => !t.completed).length); } let primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#25D366'; myChart = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [ { label: i18n[currentLang].chart_done, data: dataDone, backgroundColor: primaryColor }, { label: i18n[currentLang].chart_pend, data: dataPending, backgroundColor: '#ef4444' } ] }, options: { responsive: true, scales: { y: { beginAtZero: true, ticks: {stepSize: 1} } } } }); }
-function renderFinance() { const container = document.getElementById('financeContainer'); let inc = 0, exp = 0; let html = finances.sort((a,b) => new Date(b.date) - new Date(a.date)).map(f => { if(f.type === 'income') inc += Number(f.amount); else exp += Number(f.amount); let icon = f.type === 'income' ? '<i class="fa-solid fa-arrow-trend-up"></i>' : '<i class="fa-solid fa-arrow-trend-down"></i>'; return `<div class="fin-item" style="cursor:pointer;" onclick="editFin(${f.id})"><div><small>${f.date}</small><br><b>${f.desc}</b></div><div style="display:flex; align-items:center; gap:15px;"><span class="fin-amt ${f.type === 'income' ? 'inc' : 'exp'}">${icon} ${f.amount}</span><button class="icon-btn no-print" onclick="event.stopPropagation(); delFin(${f.id})"><i class="fa-solid fa-trash"></i></button></div></div>`; }).join(''); document.getElementById('totalIncome').innerText = inc; document.getElementById('totalExpense').innerText = exp; document.getElementById('netBalance').innerText = inc - exp; container.innerHTML = html || `<p style="text-align:center; color:var(--text-muted);">${currentLang==='ar'?'لا توجد معاملات.':'No transactions yet.'}</p>`; }
+function renderFinance() { const container = document.getElementById('financeContainer'); let inc = 0, exp = 0; let html = finances.sort((a,b) => new Date(b.date) - new Date(a.date)).map(f => { if(f.type === 'income') inc += Number(f.amount); else exp += Number(f.amount); let icon = f.type === 'income' ? '<i class="fa-solid fa-arrow-trend-up"></i>' : '<i class="fa-solid fa-arrow-trend-down"></i>'; let bgStyle = f.type === 'income' ? 'border: 1px solid var(--success); background-color: rgba(16, 185, 129, 0.05);' : 'border: 1px solid var(--danger); background-color: rgba(239, 68, 68, 0.05);'; return `<div class="fin-item" style="cursor:pointer; transition: all 0.3s ease; ${bgStyle}" onclick="editFin(${f.id})"><div><small>${f.date}</small><br><b>${f.desc}</b></div><div style="display:flex; align-items:center; gap:15px;"><span class="fin-amt ${f.type === 'income' ? 'inc' : 'exp'}">${icon} ${f.amount}</span><button class="icon-btn no-print" onclick="event.stopPropagation(); delFin(${f.id})"><i class="fa-solid fa-trash"></i></button></div></div>`; }).join(''); document.getElementById('totalIncome').innerText = inc; document.getElementById('totalExpense').innerText = exp; document.getElementById('netBalance').innerText = inc - exp; container.innerHTML = html || `<p style="text-align:center; color:var(--text-muted);">${currentLang==='ar'?'لا توجد معاملات.':'No transactions yet.'}</p>`; }
 document.getElementById('saveFinBtn').onclick = () => { let desc = document.getElementById('finDesc').value; let amt = document.getElementById('finAmount').value; if(!desc || !amt) return; finances.push({ id: Date.now(), desc: desc, amount: amt, type: document.getElementById('finType').value, date: document.getElementById('finDate').value }); saveAll(); document.getElementById('financeModal').classList.remove('show'); renderFinance(); renderDashboard(); };
-window.editFin = (id) => { let f = finances.find(x => x.id === id); if(!f) return; document.getElementById('editFinId').value = f.id; document.getElementById('editFinDesc').value = f.desc; document.getElementById('editFinAmount').value = f.amount; document.getElementById('editFinType').value = f.type; document.getElementById('editFinDate').value = f.date; document.getElementById('editFinModal').classList.add('show'); };
+window.editFin = (id) => { let f = finances.find(x => x.id === id); if(!f) return; document.getElementById('editFinId').value = f.id;
+document.getElementById('editFinDesc').value = f.desc; document.getElementById('editFinAmount').value = f.amount; document.getElementById('editFinType').value = f.type; document.getElementById('editFinDate').value = f.date; document.getElementById('editFinModal').classList.add('show'); setTimeout(() => { if(window.updateFinColor) updateFinColor('editFinType', 'editFinAmount'); }, 50); };
 document.getElementById('updateFinBtn').onclick = () => { let id = parseInt(document.getElementById('editFinId').value); let desc = document.getElementById('editFinDesc').value; let amt = document.getElementById('editFinAmount').value; if(!desc || !amt) return; let f = finances.find(x => x.id === id); if(f) { f.desc = desc; f.amount = amt; f.type = document.getElementById('editFinType').value; f.date = document.getElementById('editFinDate').value; saveAll(); renderFinance(); renderDashboard(); document.getElementById('editFinModal').classList.remove('show'); } };
 window.delFin = id => { finances = finances.filter(f => f.id !== id); saveAll(); renderFinance(); renderDashboard(); }
 function renderHabits() { let dim = new Date(currentYearView, currentMonthView + 1, 0).getDate(); let habitText = currentLang === 'ar' ? 'العادة' : 'Habit'; let html = `<table class="habit-table"><thead><tr><th>${habitText}</th>`; for(let i=1; i<=dim; i++) html += `<th>${i}</th>`; html += `</tr></thead><tbody>`; habits.forEach(h => { html += `<tr><td class="habit-name"><button class="icon-btn no-print" style="color:red;" onclick="delHabit(${h.id})">x</button> ${h.name}</td>`; for(let i=1; i<=dim; i++) { let k = `${currentYearView}-${currentMonthView}-${i}`; html += `<td><div class="habit-check ${h.days[k]?'done':''}" onclick="toggleHabit(${h.id}, '${k}')">✓</div></td>`; } html += `</tr>`; }); document.getElementById('habitsContainer').innerHTML = html + `</tbody></table>`; }
@@ -866,3 +906,132 @@ if(manualUpBtn) {
         }
     };
 }
+
+window.updateFinColor = (typeId, amountId) => {
+    const typeEl = document.getElementById(typeId);
+    const amtEl = document.getElementById(amountId);
+    if(typeEl && amtEl) {
+        if(typeEl.value === 'income') {
+            typeEl.style.color = 'var(--success)'; typeEl.style.borderColor = 'var(--success)'; typeEl.style.backgroundColor = 'rgba(16, 185, 129, 0.05)';
+            amtEl.style.color = 'var(--success)'; amtEl.style.borderColor = 'var(--success)'; amtEl.style.backgroundColor = 'rgba(16, 185, 129, 0.05)';
+        } else {
+            typeEl.style.color = 'var(--danger)'; typeEl.style.borderColor = 'var(--danger)'; typeEl.style.backgroundColor = 'rgba(239, 68, 68, 0.05)';
+            amtEl.style.color = 'var(--danger)'; amtEl.style.borderColor = 'var(--danger)'; amtEl.style.backgroundColor = 'rgba(239, 68, 68, 0.05)';
+        }
+    }
+};
+
+// ==========================================
+// تصدير التقارير الاحترافية ثنائية اللغة (Excel & PDF) مع المجاميع
+// ==========================================
+window.exportFinanceExcel = () => {
+    if(finances.length === 0) return alert(currentLang === 'ar' ? 'لا توجد بيانات لتصديرها' : 'No data to export');
+    
+    let inc = 0, exp = 0;
+    const sortedFinances = [...finances].sort((a,b) => new Date(b.date) - new Date(a.date));
+    
+    // قاموس الترجمة الديناميكي لملف الإكسيل حسب لغة التطبيق
+    const labels = {
+        ar: { date: 'التاريخ', desc: 'الوصف', type: 'النوع', amt: 'المبلغ', inc: 'إيراد (+)', exp: 'مصروف (-)', totalInc: 'إجمالي الدخل الشامل', totalExp: 'إجمالي المصروفات الشاملة', balance: 'الرصيد المتبقي المتاح' },
+        en: { date: 'Date', desc: 'Description', type: 'Type', amt: 'Amount', inc: 'Income (+)', exp: 'Expense (-)', totalInc: 'Total Aggregated Income', totalExp: 'Total Aggregated Expenses', balance: 'Remaining Net Balance' }
+    }[currentLang];
+
+    // 1. بناء صفوف المعاملات المالية
+    const rows = sortedFinances.map(f => {
+        const amtNum = Number(f.amount);
+        if(f.type === 'income') inc += amtNum; else exp += exp + amtNum; // حساب تجميعي حقيقي للتحقق
+        return {
+            [labels.date]: f.date,
+            [labels.desc]: f.desc,
+            [labels.type]: f.type === 'income' ? labels.inc : labels.exp,
+            [labels.amt]: amtNum
+        };
+    });
+
+    // إعادة حساب دقيقة للمجاميع الكلية لضمان عدم حدوث خطأ تكراري
+    let finalInc = finances.reduce((acc, c) => c.type === 'income' ? acc + Number(c.amount) : acc, 0);
+    let finalExp = finances.reduce((acc, c) => c.type === 'expense' ? acc + Number(c.amount) : acc, 0);
+
+    // 2. إضافة صف فارغ كفاصل بصري احترافي
+    rows.push({ [labels.date]: '', [labels.desc]: '', [labels.type]: '', [labels.amt]: '' });
+
+    // 3. حقن بنود المجاميع المجمعة والرصيد المتبقي في نهاية الجدول المالي
+    rows.push({ [labels.date]: labels.totalInc, [labels.desc]: '', [labels.type]: '', [labels.amt]: finalInc });
+    rows.push({ [labels.date]: labels.totalExp, [labels.desc]: '', [labels.type]: '', [labels.amt]: finalExp });
+    rows.push({ [labels.date]: labels.balance, [labels.desc]: '', [labels.type]: '', [labels.amt]: finalInc - finalExp });
+
+    // تحويل البيانات لملف الشيت وتصديره
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, currentLang === 'ar' ? "التقرير المالي الكلي" : "Comprehensive Finance Report");
+    XLSX.writeFile(wb, currentLang === 'ar' ? "تقرير_المتتبع_المالي_الشامل.xlsx" : "Planner_Comprehensive_Finance_Report.xlsx");
+};
+
+window.exportFinancePDF = () => {
+    if(finances.length === 0) return alert(currentLang === 'ar' ? 'لا توجد بيانات لتصديرها' : 'No data to export');
+    
+    const element = document.createElement('div');
+    element.style.padding = '30px';
+    element.style.direction = currentLang === 'ar' ? 'rtl' : 'ltr';
+    element.style.fontFamily = 'Inter, sans-serif';
+    
+    // قاموس ترجمة الهيدر والعناوين للـ PDF
+    const labels = {
+        ar: { title: 'تقرير الإدارة المالية الشامل', inc: 'إجمالي الدخل الشامل', exp: 'إجمالي المصروفات الشاملة', bal: 'صافي الرصيد المتبقي', date: 'التاريخ', desc: 'البيان / الوصف', amt: 'القيمة المادية' },
+        en: { title: 'Comprehensive Financial Management Report', inc: 'Total Gross Income', exp: 'Total Gross Expenses', bal: 'Net Remaining Balance', date: 'Date', desc: 'Description / Item', amt: 'Financial Value' }
+    }[currentLang];
+
+    let inc = finances.reduce((acc, c) => c.type === 'income' ? acc + Number(c.amount) : acc, 0);
+    let exp = finances.reduce((acc, c) => c.type === 'expense' ? acc + Number(c.amount) : acc, 0);
+    
+    let rows = [...finances].sort((a,b) => new Date(b.date) - new Date(a.date)).map(f => {
+        let color = f.type === 'income' ? '#10b981' : '#ef4444';
+        let sign = f.type === 'income' ? '+' : '-';
+        return `<tr style="border-bottom:1px solid #e5e7eb; transition: 0.2s;">
+            <td style="padding:12px 10px; text-align:${currentLang === 'ar' ? 'right' : 'left'}; color:#4b5563;">${f.date}</td>
+            <td style="padding:12px 10px; text-align:${currentLang === 'ar' ? 'right' : 'left'}; font-weight:500;">${f.desc}</td>
+            <td style="padding:12px 10px; color:${color}; font-weight:700; text-align:${currentLang === 'ar' ? 'left' : 'right'};" dir="ltr">${f.amount} ${sign}</td>
+        </tr>`;
+    }).join('');
+
+    element.innerHTML = `
+        <div style="text-align:center; margin-bottom:30px; border-bottom: 3px solid #25D366; padding-bottom: 15px;">
+            <h1 style="color:#111827; margin:0; font-size: 24px; font-weight:700;">Planner Pro Max</h1>
+            <h3 style="color:#6b7280; margin-top:5px; font-size: 14px; letter-spacing: 0.5px;">${labels.title}</h3>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:30px; background:#f9fafb; padding:20px; border-radius:12px; border:1px solid #e5e7eb; gap: 15px;">
+            <div style="text-align:center; flex:1;">
+                <strong style="color:#4b5563; font-size:12px; display:block; margin-bottom:5px;">${labels.inc}</strong>
+                <span style="color:#10b981; font-size:1.4rem; font-weight:700;">${inc}</span>
+            </div>
+            <div style="text-align:center; flex:1; border-right:1px solid #e5e7eb; border-left:1px solid #e5e7eb;">
+                <strong style="color:#4b5563; font-size:12px; display:block; margin-bottom:5px;">${labels.exp}</strong>
+                <span style="color:#ef4444; font-size:1.4rem; font-weight:700;">${exp}</span>
+            </div>
+            <div style="text-align:center; flex:1;">
+                <strong style="color:#4b5563; font-size:12px; display:block; margin-bottom:5px;">${labels.bal}</strong>
+                <span style="color:#25D366; font-size:1.4rem; font-weight:800;">${inc - exp}</span>
+            </div>
+        </div>
+        <table style="width:100%; border-collapse: collapse; background:#ffffff;">
+            <thead style="background:#1f2937; color:#ffffff;">
+                <tr>
+                    <th style="padding:12px 10px; text-align:${currentLang === 'ar' ? 'right' : 'left'}; border-top-right-radius:6px; font-size:13px;">${labels.date}</th>
+                    <th style="padding:12px 10px; text-align:${currentLang === 'ar' ? 'right' : 'left'}; font-size:13px;">${labels.desc}</th>
+                    <th style="padding:12px 10px; text-align:${currentLang === 'ar' ? 'left' : 'right'}; border-top-left-radius:6px; font-size:13px;">${labels.amt}</th>
+                </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+        </table>
+    `;
+
+    const opt = {
+        margin: [0.4, 0.4],
+        filename: currentLang === 'ar' ? 'تقرير_المتتبع_المالي_الشامل.pdf' : 'Comprehensive_Finance_Report.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2.5, useCORS: true },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+    };
+    
+    html2pdf().set(opt).from(element).save();
+};
