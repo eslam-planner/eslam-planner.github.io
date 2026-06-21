@@ -1,19 +1,21 @@
 // 1. سجل التحديثات (اكتب تحديثاتك هنا في كل إصدار جديد)
 const latestReleaseNotes = {
     ar: [
-        "تفعيل الروابط التلقائية في الملاحظات والمراجع.",
-        "إضافة أيقونات الاتصال السريع والواتساب.",
-        "تطوير خطة الشهر وإضافة حفظ أرقام الهواتف."
+        "إضافة سجل متكامل لمؤقت التركيز (بومودورو) 🍅.",
+        "تصدير التقارير المالية والإنتاجية لملفات Excel و PDF 📊.",
+        "تحديث شامل للتصميم وإضافة تأثيرات حركية (Animations) 🎨.",
+        "تمييز الإيرادات والمصروفات بالألوان تلقائياً 💵."
     ],
     en: [
-        "Added Export to PDF & Excel in Finance.",
-        "New beautiful Changelog screen.",
-        "Professional UI & Animations."
+        "Added a comprehensive Focus Timer (Pomodoro) log 🍅.",
+        "Export financial and productivity reports to Excel & PDF 📊.",
+        "Massive UI overhaul with smooth animations 🎨.",
+        "Automatic color-coding for Income and Expenses 💵."
     ]
 };
 
 // كود إظهار صندوق التحديثات التلقائي
-const APP_VERSION = 'v12'; // يجب تغييره هنا مع كل تحديث رئيسي مستقبلاً
+const APP_VERSION = 'v15'; // يجب تغييره هنا مع كل تحديث رئيسي مستقبلاً
 function checkAndShowChangelog() {
     const savedVersion = localStorage.getItem('fp_version');
     if(savedVersion !== APP_VERSION) {
@@ -117,8 +119,13 @@ const i18n = {
         title_backup: "النسخ الاحتياطي اليدوي", btn_download: "تنزيل البيانات", btn_restore: "استرجاع ملف",
         chart_done: "مكتملة", chart_pend: "غير مكتملة", btn_cancel: "إلغاء", btn_save: "حفظ", title_login: "تسجيل الدخول للمزامنة",
         title_update_log: "سجل التحديثات 🔄",
-        btn_check_update: "البحث عن تحديث / تنشيط التطبيق"
-    },
+        btn_check_update: "البحث عن تحديث / تنشيط التطبيق",
+        card_pomodoro_blocks: "جلسات التركيز اليوم",
+        pom_log_title: "سجل جلسات التركيز ⏱️",
+        pom_work_log: "جلسة تركيز عمل",
+        pom_break_log: "جلسة استراحة ونقاهة",
+        pom_no_log: "لم يتم تسجيل أي جلسات تركيز بعد."
+    },  
     en: {
         nav_dash: "Dashboard", nav_month: "Monthly Plan", nav_today: "Today", nav_pomodoro: "Focus Timer", nav_kanban: "Projects", nav_habits: "Habit Tracker", nav_finance: "Finance", nav_lib: "Library", nav_notes: "Notes", nav_settings: "Settings & Sync",
         btn_invite: "Invite", btn_install: "Install App",
@@ -138,7 +145,12 @@ const i18n = {
         title_backup: "Manual Backup", btn_download: "Download Data", btn_restore: "Restore File",
         chart_done: "Completed", chart_pend: "Pending", btn_cancel: "Cancel", btn_save: "Save", title_login: "Login to Sync",
         title_update_log: "Update Log 🔄",
-        btn_check_update: "Check for Updates / Refresh App"
+        btn_check_update: "Check for Updates / Refresh App",
+        card_pomodoro_blocks: "Focus Sessions Today",
+        pom_log_title: "Focus Session Log ⏱️",
+        pom_work_log: "Focus Work Session",
+        pom_break_log: "Rest & Break Session",
+        pom_no_log: "No focus sessions logged yet."
     }
 };
 
@@ -170,6 +182,7 @@ function initColorTheme() {
 }
 
 let tasks = JSON.parse(localStorage.getItem('fp_tasks')) || []; let notes = JSON.parse(localStorage.getItem('fp_notes')) || []; let profile = JSON.parse(localStorage.getItem('fp_profile')) || { name: '', phone: '' }; let kanbanTasks = JSON.parse(localStorage.getItem('fp_kanban')) || { todo: [], inprogress: [], done: [] }; let habits = JSON.parse(localStorage.getItem('fp_habits')) || []; let finances = JSON.parse(localStorage.getItem('fp_finance')) || []; let library = JSON.parse(localStorage.getItem('fp_library')) || [];
+let pomodoroLog = JSON.parse(localStorage.getItem('fp_pomodoro_log')) || [];
 const getTodayStr = () => { const d = new Date(); return new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().split('T')[0]; };
 let currentTodayStr = getTodayStr(); let currentDailyDate = currentTodayStr; let currentMonthView = new Date().getMonth(); let currentYearView = new Date().getFullYear();
 const monthNamesAr = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"]; const monthNamesEn = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -178,7 +191,7 @@ let myChart = null;
 setInterval(() => { let checkDate = getTodayStr(); if (checkDate !== currentTodayStr) { currentTodayStr = checkDate; if(currentDailyDate === currentTodayStr) { document.getElementById('viewDailyDate').value = currentTodayStr; renderViews(); } } }, 60000);
 
 function saveAll() {
-    localStorage.setItem('fp_tasks', JSON.stringify(tasks)); localStorage.setItem('fp_notes', JSON.stringify(notes)); localStorage.setItem('fp_kanban', JSON.stringify(kanbanTasks)); localStorage.setItem('fp_habits', JSON.stringify(habits)); localStorage.setItem('fp_finance', JSON.stringify(finances)); localStorage.setItem('fp_library', JSON.stringify(library)); localStorage.setItem('fp_profile', JSON.stringify(profile));
+    localStorage.setItem('fp_tasks', JSON.stringify(tasks)); localStorage.setItem('fp_notes', JSON.stringify(notes)); localStorage.setItem('fp_kanban', JSON.stringify(kanbanTasks)); localStorage.setItem('fp_habits', JSON.stringify(habits)); localStorage.setItem('fp_finance', JSON.stringify(finances)); localStorage.setItem('fp_library', JSON.stringify(library)); localStorage.setItem('fp_profile', JSON.stringify(profile)); localStorage.setItem('fp_pomodoro_log', JSON.stringify(pomodoroLog));
     if (useCloud && currentUser) { let monthlyData = {}; for(let i=0; i<localStorage.length; i++) { let k = localStorage.key(i); if(k.startsWith('PlannerMonthData_')) monthlyData[k] = localStorage.getItem(k); } db.collection('users').doc(currentUser.uid).set({ tasks, notes, kanbanTasks, habits, finances, library, profile, monthlyData }, {merge: true}).catch(e => console.log(e)); }
 }
 function loadFromCloud() { db.collection('users').doc(currentUser.uid).get().then(doc => { if (doc.exists) { const data = doc.data(); if(data.tasks) tasks = data.tasks; if(data.notes) notes = data.notes; if(data.kanbanTasks) kanbanTasks = data.kanbanTasks; if(data.habits) habits = data.habits; if(data.finances) finances = data.finances; if(data.library) library = data.library; if(data.profile) profile = data.profile; if(data.monthlyData) { for(let k in data.monthlyData) localStorage.setItem(k, data.monthlyData[k]); } saveAll(); renderViews(); } }); }
@@ -393,7 +406,11 @@ document.getElementById('copyLinkBtn').onclick = () => {
     initPomodoro(); renderViews();
 });
 
-function renderViews() { renderDashboard(); renderMonthly(); renderDaily(); renderKanban(); renderHabits(); renderFinance(); renderLibrary(); renderNotes(); if(typeof renderChangelog === 'function') renderChangelog(); }
+function renderViews() { 
+    renderDashboard(); renderMonthly(); renderDaily(); renderKanban(); renderHabits(); renderFinance(); renderLibrary(); renderNotes(); 
+    if(typeof renderPomodoroLog === 'function') renderPomodoroLog();
+    if(typeof renderChangelog === 'function') renderChangelog();
+}
 
 function renderDaily() { 
     const container = document.getElementById('plannerContainer'); container.innerHTML = ''; 
@@ -700,8 +717,12 @@ function initPomodoro() {
                 clearInterval(pomTimer); 
                 isPomRunning=false; 
                 pomTimeLeft=0; 
-                updateTimeDisplay(); 
+               updateTimeDisplay(); 
                 const tomato = document.getElementById('tomatoIcon'); if(tomato) tomato.classList.remove('running');
+                
+                // تسجيل الجلسة المكتملة برمجياً
+                if(window.logPomodoroSession) window.logPomodoroSession(pomMode, pomMode === 'work' ? workDuration : 5);
+                
                 // تشغيل الصوت بقوة عند انتهاء الوقت
                 if(alarm) { alarm.currentTime = 0; alarm.play().catch(e=>console.log("Audio Play Blocked:", e)); }
                 
@@ -845,7 +866,16 @@ window.delSubtask = (id, col, subIdx) => {
     }
 };
 
-function renderDashboard() { let dashClearedStr = localStorage.getItem('fp_dash_cleared'); let activeTasks = (dashClearedStr === currentTodayStr) ? [] : tasks.filter(t => t.date === currentTodayStr); let completed = activeTasks.filter(t => t.completed).length; document.getElementById('dashTasks').innerText = `${completed} / ${activeTasks.length}`; let tHC = 0; let dHC = 0; habits.forEach(h => { for(let i=1; i<=30; i++) { tHC++; if(h.days[`${currentYearView}-${currentMonthView}-${i}`]) dHC++; } }); document.getElementById('dashHabits').innerText = `${tHC === 0 ? 0 : Math.round((dHC/tHC)*100)}%`; let balance = finances.reduce((acc, curr) => curr.type === 'income' ? acc + Number(curr.amount) : acc - Number(curr.amount), 0); document.getElementById('dashBalance').innerText = `${balance}`; let resetDate = localStorage.getItem('fp_stats_reset') || "2000-01-01"; const ctx = document.getElementById('tasksChart').getContext('2d'); if(myChart) myChart.destroy(); let labels = []; let dataDone = []; let dataPending = []; for(let i=6; i>=0; i--) { let d = new Date(); d.setDate(d.getDate() - i); let dateStr = new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().split('T')[0]; labels.push(d.toLocaleDateString(currentLang==='ar'?'ar-EG':'en-US', {weekday: 'short'})); let dayTasks = tasks.filter(t => t.date === dateStr && t.date >= resetDate); dataDone.push(dayTasks.filter(t => t.completed).length); dataPending.push(dayTasks.filter(t => !t.completed).length); } let primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#25D366'; myChart = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [ { label: i18n[currentLang].chart_done, data: dataDone, backgroundColor: primaryColor }, { label: i18n[currentLang].chart_pend, data: dataPending, backgroundColor: '#ef4444' } ] }, options: { responsive: true, scales: { y: { beginAtZero: true, ticks: {stepSize: 1} } } } }); }
+function renderDashboard() { 
+    let dashClearedStr = localStorage.getItem('fp_dash_cleared'); 
+    let activeTasks = (dashClearedStr === currentTodayStr) ? [] : tasks.filter(t => t.date === currentTodayStr); 
+    let completed = activeTasks.filter(t => t.completed).length; 
+    document.getElementById('dashTasks').innerText = `${completed} / ${activeTasks.length}`;
+    
+    // حساب عدد بلوكات العمل المكتملة لليوم الحالي فقط
+    let todayWorkBlocks = pomodoroLog.filter(log => log.date === currentTodayStr && log.type === 'work').length;
+    const dashPomEl = document.getElementById('dashPomodoro');
+    if(dashPomEl) dashPomEl.innerText = todayWorkBlocks; let tHC = 0; let dHC = 0; habits.forEach(h => { for(let i=1; i<=30; i++) { tHC++; if(h.days[`${currentYearView}-${currentMonthView}-${i}`]) dHC++; } }); document.getElementById('dashHabits').innerText = `${tHC === 0 ? 0 : Math.round((dHC/tHC)*100)}%`; let balance = finances.reduce((acc, curr) => curr.type === 'income' ? acc + Number(curr.amount) : acc - Number(curr.amount), 0); document.getElementById('dashBalance').innerText = `${balance}`; let resetDate = localStorage.getItem('fp_stats_reset') || "2000-01-01"; const ctx = document.getElementById('tasksChart').getContext('2d'); if(myChart) myChart.destroy(); let labels = []; let dataDone = []; let dataPending = []; for(let i=6; i>=0; i--) { let d = new Date(); d.setDate(d.getDate() - i); let dateStr = new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().split('T')[0]; labels.push(d.toLocaleDateString(currentLang==='ar'?'ar-EG':'en-US', {weekday: 'short'})); let dayTasks = tasks.filter(t => t.date === dateStr && t.date >= resetDate); dataDone.push(dayTasks.filter(t => t.completed).length); dataPending.push(dayTasks.filter(t => !t.completed).length); } let primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#25D366'; myChart = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [ { label: i18n[currentLang].chart_done, data: dataDone, backgroundColor: primaryColor }, { label: i18n[currentLang].chart_pend, data: dataPending, backgroundColor: '#ef4444' } ] }, options: { responsive: true, scales: { y: { beginAtZero: true, ticks: {stepSize: 1} } } } }); }
 function renderFinance() { const container = document.getElementById('financeContainer'); let inc = 0, exp = 0; let html = finances.sort((a,b) => new Date(b.date) - new Date(a.date)).map(f => { if(f.type === 'income') inc += Number(f.amount); else exp += Number(f.amount); let icon = f.type === 'income' ? '<i class="fa-solid fa-arrow-trend-up"></i>' : '<i class="fa-solid fa-arrow-trend-down"></i>'; let bgStyle = f.type === 'income' ? 'border: 1px solid var(--success); background-color: rgba(16, 185, 129, 0.05);' : 'border: 1px solid var(--danger); background-color: rgba(239, 68, 68, 0.05);'; return `<div class="fin-item" style="cursor:pointer; transition: all 0.3s ease; ${bgStyle}" onclick="editFin(${f.id})"><div><small>${f.date}</small><br><b>${f.desc}</b></div><div style="display:flex; align-items:center; gap:15px;"><span class="fin-amt ${f.type === 'income' ? 'inc' : 'exp'}">${icon} ${f.amount}</span><button class="icon-btn no-print" onclick="event.stopPropagation(); delFin(${f.id})"><i class="fa-solid fa-trash"></i></button></div></div>`; }).join(''); document.getElementById('totalIncome').innerText = inc; document.getElementById('totalExpense').innerText = exp; document.getElementById('netBalance').innerText = inc - exp; container.innerHTML = html || `<p style="text-align:center; color:var(--text-muted);">${currentLang==='ar'?'لا توجد معاملات.':'No transactions yet.'}</p>`; }
 document.getElementById('saveFinBtn').onclick = () => { let desc = document.getElementById('finDesc').value; let amt = document.getElementById('finAmount').value; if(!desc || !amt) return; finances.push({ id: Date.now(), desc: desc, amount: amt, type: document.getElementById('finType').value, date: document.getElementById('finDate').value }); saveAll(); document.getElementById('financeModal').classList.remove('show'); renderFinance(); renderDashboard(); };
 window.editFin = (id) => { let f = finances.find(x => x.id === id); if(!f) return; document.getElementById('editFinId').value = f.id;
@@ -1028,6 +1058,189 @@ window.exportFinancePDF = () => {
     const opt = {
         margin: [0.4, 0.4],
         filename: currentLang === 'ar' ? 'تقرير_المتتبع_المالي_الشامل.pdf' : 'Comprehensive_Finance_Report.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2.5, useCORS: true },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+    };
+    
+    html2pdf().set(opt).from(element).save();
+};
+
+// ==========================================================================
+// برمجيات سجل البومودورو المطور والتصدير الديناميكي ثنائي اللغة (Excel & PDF)
+// ==========================================================================
+
+// دالة ذكية تقوم بتحويل وتنسيق الوقت المخزن ديناميكياً ليدعم اللغتين (AM/PM أو ص/م) بكفاءة
+window.getFormattedTime = (logTime, lang) => {
+    if (!logTime) return '';
+    let hours = 0, minutes = 0;
+    
+    // التحقق إذا كان الوقت مخزناً بصيغة 24 ساعة الموحدة الجديدة
+    const match24 = logTime.match(/^(\d{1,2}):(\d{2})$/);
+    if (match24) {
+        hours = parseInt(match24[1], 10);
+        minutes = parseInt(match24[2], 10);
+    } else {
+        // معالجة البيانات القديمة المخزنة مسبقاً (عربي أو إنجليزي) وتحويل أرقامها هندسياً
+        let cleanTime = logTime.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+        const nums = cleanTime.match(/\d+/g);
+        if (nums && nums.length >= 2) {
+            hours = parseInt(nums[0], 10);
+            minutes = parseInt(nums[1], 10);
+            const isPM = logTime.includes('م') || logTime.toLowerCase().includes('pm');
+            const isAM = logTime.includes('ص') || logTime.toLowerCase().includes('am');
+            if (isPM && hours < 12) hours += 12;
+            if (isAM && hours === 12) hours = 0;
+        } else {
+            return logTime; // العودة للنص الأصلي كخطة بديلة لحماية البيانات
+        }
+    }
+    
+    const dateObj = new Date();
+    dateObj.setHours(hours);
+    dateObj.setMinutes(minutes);
+    return dateObj.toLocaleTimeString(lang === 'ar' ? 'ar-EG' : 'en-US', { hour: '2-digit', minute: '2-digit' });
+};
+
+window.logPomodoroSession = (type, duration) => {
+    const now = new Date();
+    // حفظ الوقت الجديد بصيغة 24 ساعة القياسية لسهولة ترجمتها بأي لغة لاحقاً
+    const timeString = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    
+    pomodoroLog.unshift({
+        id: Date.now(),
+        date: getTodayStr(),
+        time: timeString,
+        type: type,
+        duration: duration
+    });
+    
+    saveAll();
+    renderPomodoroLog();
+    renderDashboard();
+};
+
+window.renderPomodoroLog = () => {
+    const container = document.getElementById('pomodoroLogContainer');
+    if (!container) return;
+    
+    if (pomodoroLog.length === 0) {
+        container.innerHTML = `<p style="text-align:center; color:var(--text-muted); font-size:0.85rem; padding:15px;">${i18n[currentLang].pom_no_log}</p>`;
+        return;
+    }
+    
+    container.innerHTML = pomodoroLog.map(log => {
+        const isWork = log.type === 'work';
+        const badgeColor = isWork ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)';
+        const textColor = isWork ? '#ef4444' : '#10b981';
+        const icon = isWork ? '🍅' : '☕';
+        const typeText = isWork ? i18n[currentLang].pom_work_log : i18n[currentLang].pom_break_log;
+        const minText = currentLang === 'ar' ? 'دقائق' : 'mins';
+        const displayTime = window.getFormattedTime(log.time, currentLang);
+        
+        return `
+            <div class="daily-task-item" style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border:1px solid var(--border-color); border-radius:10px; background:var(--card-bg); font-size:0.88rem; transition: all 0.25s ease;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:1.1rem;">${icon}</span>
+                    <div>
+                        <strong style="color:var(--text-main); display:block;">${typeText}</strong>
+                        <small style="color:var(--text-muted); font-size:0.75rem;"><i class="fa-regular fa-calendar"></i> ${log.date} | <i class="fa-regular fa-clock"></i> ${displayTime}</small>
+                    </div>
+                </div>
+                <span style="background:${badgeColor}; color:${textColor}; padding:4px 8px; border-radius:6px; font-weight:700; font-size:0.8rem;">${log.duration} ${minText}</span>
+            </div>
+        `;
+    }).join('');
+};
+
+window.clearPomodoroLog = () => {
+    if(confirm(currentLang === 'ar' ? 'هل تريد مسح سجل جلسات التركيز بالكامل؟' : 'Are you sure you want to completely clear the focus log?')) {
+        pomodoroLog = [];
+        saveAll();
+        renderPomodoroLog();
+        renderDashboard();
+    }
+};
+
+window.exportPomodoroExcel = () => {
+    if(pomodoroLog.length === 0) return alert(currentLang === 'ar' ? 'لا توجد جلسات مسجلة لتصديرها' : 'No logged sessions to export');
+    
+    const labels = {
+        ar: { date: 'التاريخ', time: 'التوقيت', type: 'نوع الجلسة', duration: 'المدة (بالدقائق)', work: 'تركيز عمل 🍅', break: 'استراحة ونقاهة ☕', totalBlocks: 'إجمالي جلسات التركيز الشاملة (البلوكات)' },
+        en: { date: 'Date', time: 'Time', type: 'Session Type', duration: 'Duration (Minutes)', work: 'Focus Work 🍅', break: 'Rest & Break ☕', totalBlocks: 'Total Completed Focus Blocks' }
+    }[currentLang];
+
+    const data = [...pomodoroLog].reverse().map(log => ({
+        [labels.date]: log.date,
+        [labels.time]: window.getFormattedTime(log.time, currentLang),
+        [labels.type]: log.type === 'work' ? labels.work : labels.break,
+        [labels.duration]: log.duration
+    }));
+    
+    let totalWorkCount = pomodoroLog.filter(l => l.type === 'work').length;
+    data.push({});
+    data.push({ [labels.date]: labels.totalBlocks, [labels.time]: '', [labels.type]: '', [labels.duration]: totalWorkCount });
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, currentLang === 'ar' ? "سجل الإنتاجية" : "Productivity Log");
+    XLSX.writeFile(wb, currentLang === 'ar' ? "سجل_جلسات_التركيز_الشامل.xlsx" : "Comprehensive_Pomodoro_Focus_Log.xlsx");
+};
+
+window.exportPomodoroPDF = () => {
+    if(pomodoroLog.length === 0) return alert(currentLang === 'ar' ? 'لا توجد جلسات مسجلة لتصديرها' : 'No logged sessions to export');
+    
+    const element = document.createElement('div');
+    element.style.padding = '30px';
+    element.style.direction = currentLang === 'ar' ? 'rtl' : 'ltr';
+    element.style.fontFamily = 'Inter, sans-serif';
+    
+    const labels = {
+        ar: { reportTitle: 'تقرير مؤشرات سجل الإنتاجية والتركيز الشامل', totalTitle: 'إجمالي جلسات العمل المنجزة', date: 'التاريخ', time: 'التوقيت', type: 'نوع الجلسة / البلوك', dur: 'المدة الزمنية', work: 'جلسة تركيز عمل', break: 'جلسة استراحة ونقاهة' },
+        en: { reportTitle: 'Comprehensive Productivity & Focus Metrics Report', totalTitle: 'Total Focus Sessions Completed', date: 'Date', time: 'Time', type: 'Session / Block Type', dur: 'Duration', work: 'Focus Work Session', break: 'Rest & Break Session' }
+    }[currentLang];
+
+    let totalWorkCount = pomodoroLog.filter(l => l.type === 'work').length;
+    const minText = currentLang === 'ar' ? 'دقائق' : 'mins';
+
+    let rows = [...pomodoroLog].map(log => {
+        let isWork = log.type === 'work';
+        let color = isWork ? '#ef4444' : '#10b981';
+        let textStr = isWork ? labels.work : labels.break;
+        let displayTime = window.getFormattedTime(log.time, currentLang);
+        return `<tr style="border-bottom:1px solid #e5e7eb;">
+            <td style="padding:12px 10px; text-align:${currentLang === 'ar' ? 'right' : 'left'}; color:#4b5563;">${log.date}</td>
+            <td style="padding:12px 10px; text-align:${currentLang === 'ar' ? 'right' : 'left'}; color:#4b5563;">${displayTime}</td>
+            <td style="padding:12px 10px; text-align:${currentLang === 'ar' ? 'right' : 'left'}; font-weight:600; color:${color};">${textStr}</td>
+            <td style="padding:12px 10px; font-weight:700; text-align:${currentLang === 'ar' ? 'left' : 'right'}; color:#111827;">${log.duration} ${minText}</td>
+        </tr>`;
+    }).join('');
+
+    element.innerHTML = `
+        <div style="text-align:center; margin-bottom:30px; border-bottom: 3px solid #ef4444; padding-bottom: 15px;">
+            <h1 style="color:#111827; margin:0; font-size: 24px; font-weight:700;">Planner Pro Max</h1>
+            <h3 style="color:#6b7280; margin-top:5px; font-size: 14px;">${labels.reportTitle}</h3>
+        </div>
+        <div style="margin-bottom:30px; background:#f9fafb; padding:20px; border-radius:12px; border:1px solid #e5e7eb; text-align:center;">
+            <strong style="color:#4b5563; font-size:13px; display:block; margin-bottom:5px;">${labels.totalTitle}</strong>
+            <span style="color:#ef4444; font-size:2rem; font-weight:800;">🍅 ${totalWorkCount}</span>
+        </div>
+        <table style="width:100%; border-collapse: collapse; background:#ffffff;">
+            <thead style="background:#1f2937; color:#ffffff;">
+                <tr>
+                    <th style="padding:12px 10px; text-align:${currentLang === 'ar' ? 'right' : 'left'}; font-size:13px;">${labels.date}</th>
+                    <th style="padding:12px 10px; text-align:${currentLang === 'ar' ? 'right' : 'left'}; font-size:13px;">${labels.time}</th>
+                    <th style="padding:12px 10px; text-align:${currentLang === 'ar' ? 'right' : 'left'}; font-size:13px;">${labels.type}</th>
+                    <th style="padding:12px 10px; text-align:${currentLang === 'ar' ? 'left' : 'right'}; font-size:13px;">${labels.dur}</th>
+                </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+        </table>
+    `;
+
+    const opt = {
+        margin: [0.4, 0.4],
+        filename: currentLang === 'ar' ? 'تقرير_سجل_جلسات_التركيز.pdf' : 'Productivity_Focus_Log_Report.pdf',
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2.5, useCORS: true },
         jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }

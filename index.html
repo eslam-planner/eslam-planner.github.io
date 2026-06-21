@@ -82,6 +82,7 @@
                     <div class="dash-card"><h3 data-i18n="card_tasks">المهام اليوم</h3><p id="dashTasks" class="dash-num">0/0</p></div>
                     <div class="dash-card"><h3 data-i18n="card_bal">الرصيد المتاح</h3><p id="dashBalance" class="dash-num" style="color: var(--success);">0</p></div>
                     <div class="dash-card"><h3 data-i18n="card_habits">إنجاز العادات</h3><p id="dashHabits" class="dash-num" style="color: var(--primary);">0%</p></div>
+                    <div class="dash-card"><h3 data-i18n="card_pomodoro_blocks">جلسات التركيز اليوم</h3><p id="dashPomodoro" class="dash-num" style="color: #ef4444;">0</p></div>
                 </div>
                 <div class="chart-container" style="background: var(--card-bg); padding: 20px; border-radius: 12px; margin-top: 20px; border: 1px solid var(--border-color);">
                     <canvas id="tasksChart" height="100"></canvas>
@@ -144,9 +145,21 @@
                         <button id="stopAlarmBtn" class="btn" style="background: var(--danger); color: white; display: none; animation: shake 0.5s infinite;"><i class="fa-solid fa-bell-slash"></i> <span data-i18n="btn_stop_alarm">إيقاف الرنين</span></button>
                     </div>
                 </div>
+                
+                <div style="max-width: 500px; margin: 25px auto 0 auto; background: var(--card-bg); padding: 20px; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                        <h3 data-i18n="pom_log_title" style="font-size: 1.1rem; color: var(--text-main); font-weight: 600;"><i class="fa-solid fa-clock-rotate-left"></i> سجل جلسات التركيز</h3>
+                        <div style="display: flex; gap: 8px;" class="no-print">
+                            <button class="btn btn-secondary" onclick="exportPomodoroExcel()" title="Excel" style="padding: 6px 10px;"><i class="fa-solid fa-file-excel" style="color: #10b981;"></i></button>
+                            <button class="btn btn-secondary" onclick="exportPomodoroPDF()" title="PDF" style="padding: 6px 10px;"><i class="fa-solid fa-file-pdf" style="color: #ef4444;"></i></button>
+                            <button class="btn btn-secondary" onclick="clearPomodoroLog()" title="Clear" style="padding: 6px 10px; color: var(--danger);"><i class="fa-solid fa-trash-can"></i></button>
+                        </div>
+                    </div>
+                    <div id="pomodoroLogContainer" style="max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 2px;"></div>
+                </div>
+
                 <audio id="pomAlarmSound" loop preload="auto"><source src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" type="audio/mpeg"></audio>
             </div>
-
             <div id="kanbanView" class="view-section">
                 <div class="content-header" style="display: flex; flex-direction: column; gap: 15px; align-items: flex-start;">
                     <h2 data-i18n="title_kanban">لوحة المشاريع</h2>
