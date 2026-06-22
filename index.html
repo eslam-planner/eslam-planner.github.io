@@ -399,6 +399,40 @@
         </div>
     </div>
 
+<div id="quickDumpModal" class="modal">
+        <div class="modal-content">
+            <h3 data-i18n="title_quick_dump" style="color: #f59e0b; margin-bottom: 15px;"><i class="fa-solid fa-bolt"></i> تفريغ الدماغ السريع</h3>
+            <input type="text" id="qdTitle" placeholder="عنوان الفكرة (اختياري)..." style="font-weight: bold; font-size: 1.1rem; border-color: #f59e0b;">
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; margin-bottom: 5px; background: rgba(37, 211, 102, 0.1); padding: 8px; border-radius: 6px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size:0.85rem; color:var(--text-main); font-weight:600;" id="dictateStatusQD" data-i18n="lib_dictate_hint">المحتوى</span>
+                    <select id="dictateLangQD" class="no-print" style="padding: 2px 5px; font-size: 0.8rem; border-radius: 4px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main);">
+                        <option value="ar-EG">عربي</option>
+                        <option value="en-US">English</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap:5px;">
+                    <button type="button" onclick="startContinuousDictation('qdContent', 'dictateLangQD', 'dictateStatusQD', 'startDicQD', 'stopDicQD')" id="startDicQD" class="icon-btn" style="color:var(--primary); font-size: 1.2rem;" title="بدء التسجيل"><i class="fa-solid fa-microphone"></i></button>
+                    <button type="button" onclick="stopContinuousDictation()" id="stopDicQD" class="icon-btn" style="color:var(--danger); font-size: 1.2rem; display:none;" title="إيقاف التسجيل"><i class="fa-solid fa-square"></i></button>
+                </div>
+            </div>
+            <textarea id="qdContent" rows="4" placeholder="..." style="margin-top:0; border-color: #f59e0b;"></textarea>
+            
+            <div class="modal-actions" style="justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                <button class="btn btn-secondary close-modal" data-i18n="btn_cancel" style="flex-grow: 1;">إلغاء</button>
+                <div style="display: flex; gap: 10px; flex-grow: 2;">
+                    <button id="saveQdToKanban" class="btn btn-primary" style="flex: 1; background: var(--warning); border-color: var(--warning);" data-i18n="btn_qd_kanban"><i class="fa-solid fa-kanban"></i> كمشروع</button>
+                    <button id="saveQdToNotes" class="btn btn-primary" style="flex: 1; background: var(--primary); border-color: var(--primary);" data-i18n="btn_qd_note"><i class="fa-solid fa-book"></i> كملاحظة</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button id="fabQuickDump" class="fab-btn no-print" title="تفريغ الدماغ ⚡" onclick="openQuickDump()">
+        <i class="fa-solid fa-bolt"></i>
+    </button>
+
 <script src="script.js"></script>
 </body>
 </html>

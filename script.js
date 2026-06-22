@@ -1,21 +1,21 @@
 // 1. سجل التحديثات (اكتب تحديثاتك هنا في كل إصدار جديد)
 const latestReleaseNotes = {
     ar: [
-        "إضافة سجل متكامل لمؤقت التركيز (بومودورو) 🍅.",
-        "تصدير التقارير المالية والإنتاجية لملفات Excel و PDF 📊.",
-        "تحديث شامل للتصميم وإضافة تأثيرات حركية (Animations) 🎨.",
-        "تمييز الإيرادات والمصروفات بالألوان تلقائياً 💵."
+        "إضافة زر 'تفريغ الدماغ ⚡' العائم لتسجيل الأفكار السريعة.",
+        "دعم الإملاء الصوتي باللغتين داخل صندوق الأفكار السريعة.",
+        "فرز الأفكار كـ 'مشروع' أو 'ملاحظة' بضغطة زر واحدة.",
+        "إصلاحات عامة وتحسين ضبط الوقت (AM/PM) في التقارير."
     ],
     en: [
-        "Added a comprehensive Focus Timer (Pomodoro) log 🍅.",
-        "Export financial and productivity reports to Excel & PDF 📊.",
-        "Massive UI overhaul with smooth animations 🎨.",
-        "Automatic color-coding for Income and Expenses 💵."
+        "Added 'Quick Brain Dump ⚡' floating button for instant ideas.",
+        "Dual-language voice dictation in the quick modal.",
+        "Sort ideas as 'Project' or 'Note' with a single click.",
+        "General fixes and AM/PM time formatting improvements."
     ]
 };
 
 // كود إظهار صندوق التحديثات التلقائي
-const APP_VERSION = 'v15'; // يجب تغييره هنا مع كل تحديث رئيسي مستقبلاً
+const APP_VERSION = 'v16'; // يجب تغييره هنا مع كل تحديث رئيسي مستقبلاً
 function checkAndShowChangelog() {
     const savedVersion = localStorage.getItem('fp_version');
     if(savedVersion !== APP_VERSION) {
@@ -124,7 +124,8 @@ const i18n = {
         pom_log_title: "سجل جلسات التركيز ⏱️",
         pom_work_log: "جلسة تركيز عمل",
         pom_break_log: "جلسة استراحة ونقاهة",
-        pom_no_log: "لم يتم تسجيل أي جلسات تركيز بعد."
+        pom_no_log: "لم يتم تسجيل أي جلسات تركيز بعد.",
+        title_quick_dump: "تفريغ الدماغ السريع ⚡", btn_qd_kanban: "كمشروع", btn_qd_note: "كملاحظة"
     },  
     en: {
         nav_dash: "Dashboard", nav_month: "Monthly Plan", nav_today: "Today", nav_pomodoro: "Focus Timer", nav_kanban: "Projects", nav_habits: "Habit Tracker", nav_finance: "Finance", nav_lib: "Library", nav_notes: "Notes", nav_settings: "Settings & Sync",
@@ -150,7 +151,8 @@ const i18n = {
         pom_log_title: "Focus Session Log ⏱️",
         pom_work_log: "Focus Work Session",
         pom_break_log: "Rest & Break Session",
-        pom_no_log: "No focus sessions logged yet."
+        pom_no_log: "No focus sessions logged yet.",
+        title_quick_dump: "Quick Brain Dump ⚡", btn_qd_kanban: "As Project", btn_qd_note: "As Note"
     }
 };
 
@@ -1247,4 +1249,53 @@ window.exportPomodoroPDF = () => {
     };
     
     html2pdf().set(opt).from(element).save();
+};
+
+// ==========================================================================
+// برمجيات زر تفريغ الدماغ السريع (Quick Brain Dump) ⚡
+// ==========================================================================
+window.openQuickDump = () => {
+    document.getElementById('qdTitle').value = '';
+    document.getElementById('qdContent').value = '';
+    document.getElementById('quickDumpModal').classList.add('show');
+    // تركيز تلقائي على مربع العنوان لسرعة الكتابة
+    setTimeout(() => { document.getElementById('qdTitle').focus(); }, 300);
+};
+
+document.getElementById('saveQdToKanban').onclick = () => {
+    let title = document.getElementById('qdTitle').value.trim();
+    let content = document.getElementById('qdContent').value.trim();
+    if(!title && !content) return;
+    
+    // إنشاء عنوان وتاريخ تلقائي إذا لم يكتب المستخدم عنواناً
+    let finalTitle = title || (currentLang === 'ar' ? `فكرة سريعة (${getTodayStr()})` : `Quick Idea (${getTodayStr()})`);
+    let fullText = content ? `📌 ${finalTitle}\n\n${content}` : `📌 ${finalTitle}`;
+    
+    // حفظ في قسم الأفكار والمشاريع
+    kanbanTasks.todo.unshift({id: Date.now(), text: fullText, subtasks: []});
+    saveAll();
+    renderKanban();
+    
+    document.getElementById('quickDumpModal').classList.remove('show');
+    stopContinuousDictation();
+    // توجيه المستخدم لصفحة المشاريع ليرى فكرته
+    document.querySelector('.nav-item[data-target="kanbanView"]').click();
+};
+
+document.getElementById('saveQdToNotes').onclick = () => {
+    let title = document.getElementById('qdTitle').value.trim();
+    let content = document.getElementById('qdContent').value.trim();
+    if(!title && !content) return;
+    
+    let finalTitle = title || (currentLang === 'ar' ? `فكرة سريعة (${getTodayStr()})` : `Quick Idea (${getTodayStr()})`);
+    
+    // حفظ في قسم الملاحظات
+    notes.unshift({ id: Date.now(), title: finalTitle, content: content, date: getTodayStr(), phone: '' });
+    saveAll();
+    renderNotes();
+    
+    document.getElementById('quickDumpModal').classList.remove('show');
+    stopContinuousDictation();
+    // توجيه المستخدم لصفحة الملاحظات ليرى فكرته
+    document.querySelector('.nav-item[data-target="notesView"]').click();
 };

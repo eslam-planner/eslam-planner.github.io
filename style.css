@@ -273,3 +273,46 @@ html[dir="ltr"] .nav-item:hover {
     50% { transform: scale(0.98); background-color: rgba(16, 185, 129, 0.03); }
     100% { transform: scale(1); }
 }
+
+/* ==========================================================================
+   Floating Action Button (FAB) - Quick Brain Dump
+   ========================================================================== */
+.fab-btn {
+    position: fixed;
+    bottom: 30px;
+    right: 30px; /* Fixed uniformly on the right side for easy thumb access */
+    width: 65px;
+    height: 65px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--warning), #f97316); /* Orange/Yellow energetic gradient */
+    color: white;
+    font-size: 1.8rem;
+    border: none;
+    box-shadow: 0 6px 15px rgba(245, 158, 11, 0.4);
+    cursor: pointer;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
+    touch-action: manipulation;
+}
+
+.fab-btn:hover {
+    transform: scale(1.1) rotate(15deg);
+    box-shadow: 0 8px 25px rgba(245, 158, 11, 0.6);
+}
+
+.fab-btn:active {
+    transform: scale(0.95);
+}
+
+@media screen and (max-width: 900px) {
+    .fab-btn {
+        bottom: 25px;
+        right: 25px;
+        width: 55px;
+        height: 55px;
+        font-size: 1.5rem;
+    }
+}
