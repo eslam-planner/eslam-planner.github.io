@@ -1,21 +1,15 @@
 // 1. سجل التحديثات (اكتب تحديثاتك هنا في كل إصدار جديد)
 const latestReleaseNotes = {
     ar: [
-        "إضافة زر 'تفريغ الدماغ ⚡' العائم لتسجيل الأفكار السريعة.",
-        "دعم الإملاء الصوتي باللغتين داخل صندوق الأفكار السريعة.",
-        "فرز الأفكار كـ 'مشروع' أو 'ملاحظة' بضغطة زر واحدة.",
-        "إصلاحات عامة وتحسين ضبط الوقت (AM/PM) في التقارير."
+        "تحسين سرعة استجابة التطبيق بشكل عام."
     ],
     en: [
-        "Added 'Quick Brain Dump ⚡' floating button for instant ideas.",
-        "Dual-language voice dictation in the quick modal.",
-        "Sort ideas as 'Project' or 'Note' with a single click.",
-        "General fixes and AM/PM time formatting improvements."
+        "Improved overall app responsiveness."
     ]
 };
 
 // كود إظهار صندوق التحديثات التلقائي
-const APP_VERSION = 'v16'; // يجب تغييره هنا مع كل تحديث رئيسي مستقبلاً
+const APP_VERSION = 'v17'; // يجب تغييره هنا مع كل تحديث رئيسي مستقبلاً
 function checkAndShowChangelog() {
     const savedVersion = localStorage.getItem('fp_version');
     if(savedVersion !== APP_VERSION) {
@@ -869,15 +863,77 @@ window.delSubtask = (id, col, subIdx) => {
 };
 
 function renderDashboard() { 
-    let dashClearedStr = localStorage.getItem('fp_dash_cleared'); 
+    let dashClearedStr = localStorage.getItem('fp_dash_cleared');
     let activeTasks = (dashClearedStr === currentTodayStr) ? [] : tasks.filter(t => t.date === currentTodayStr); 
-    let completed = activeTasks.filter(t => t.completed).length; 
-    document.getElementById('dashTasks').innerText = `${completed} / ${activeTasks.length}`;
+    let completed = activeTasks.filter(t => t.completed).length;
+    let dtEl = document.getElementById('dashTasks');
+    if(dtEl) dtEl.innerText = `${completed} / ${activeTasks.length}`;
     
-    // حساب عدد بلوكات العمل المكتملة لليوم الحالي فقط
-    let todayWorkBlocks = pomodoroLog.filter(log => log.date === currentTodayStr && log.type === 'work').length;
+    // أنيميشن دائرة المهام
+    let tPercent = activeTasks.length > 0 ? (completed / activeTasks.length) * 100 : 0;
+    let fillT = document.getElementById('fillTasks');
+    if(fillT) fillT.setAttribute('stroke-dasharray', `${tPercent}, 100`);
+    
+    let todayWorkBlocks = 0;
+    if(typeof pomodoroLog !== 'undefined') { todayWorkBlocks = pomodoroLog.filter(log => log.date === currentTodayStr && log.type === 'work').length; }
     const dashPomEl = document.getElementById('dashPomodoro');
-    if(dashPomEl) dashPomEl.innerText = todayWorkBlocks; let tHC = 0; let dHC = 0; habits.forEach(h => { for(let i=1; i<=30; i++) { tHC++; if(h.days[`${currentYearView}-${currentMonthView}-${i}`]) dHC++; } }); document.getElementById('dashHabits').innerText = `${tHC === 0 ? 0 : Math.round((dHC/tHC)*100)}%`; let balance = finances.reduce((acc, curr) => curr.type === 'income' ? acc + Number(curr.amount) : acc - Number(curr.amount), 0); document.getElementById('dashBalance').innerText = `${balance}`; let resetDate = localStorage.getItem('fp_stats_reset') || "2000-01-01"; const ctx = document.getElementById('tasksChart').getContext('2d'); if(myChart) myChart.destroy(); let labels = []; let dataDone = []; let dataPending = []; for(let i=6; i>=0; i--) { let d = new Date(); d.setDate(d.getDate() - i); let dateStr = new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().split('T')[0]; labels.push(d.toLocaleDateString(currentLang==='ar'?'ar-EG':'en-US', {weekday: 'short'})); let dayTasks = tasks.filter(t => t.date === dateStr && t.date >= resetDate); dataDone.push(dayTasks.filter(t => t.completed).length); dataPending.push(dayTasks.filter(t => !t.completed).length); } let primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#25D366'; myChart = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [ { label: i18n[currentLang].chart_done, data: dataDone, backgroundColor: primaryColor }, { label: i18n[currentLang].chart_pend, data: dataPending, backgroundColor: '#ef4444' } ] }, options: { responsive: true, scales: { y: { beginAtZero: true, ticks: {stepSize: 1} } } } }); }
+    if(dashPomEl) dashPomEl.innerText = todayWorkBlocks; 
+
+    // أنيميشن دائرة البومودورو (نفترض أن الهدف اليومي 8 جلسات)
+    let pPercent = todayWorkBlocks >= 8 ? 100 : (todayWorkBlocks / 8) * 100;
+    let fillP = document.getElementById('fillPomodoro');
+    if(fillP) fillP.setAttribute('stroke-dasharray', `${pPercent}, 100`);
+
+    let tHC = 0; let dHC = 0;
+    if(typeof habits !== 'undefined') { habits.forEach(h => { for(let i=1; i<=30; i++) { tHC++; if(h.days[`${currentYearView}-${currentMonthView}-${i}`]) dHC++; } }); }
+    let dhEl = document.getElementById('dashHabits');
+    let habitPercentValue = tHC === 0 ? 0 : Math.round((dHC/tHC)*100);
+    if(dhEl) dhEl.innerText = `${habitPercentValue}%`;
+    
+    // أنيميشن دائرة العادات
+    let fillH = document.getElementById('fillHabits');
+    if(fillH) fillH.setAttribute('stroke-dasharray', `${habitPercentValue}, 100`);
+
+    let balance = 0; let totalIncome = 0;
+    if(typeof finances !== 'undefined') { 
+        finances.forEach(curr => {
+            let amt = Number(curr.amount);
+            if(curr.type === 'income') { balance += amt; totalIncome += amt; } 
+            else { balance -= amt; }
+        });
+    }
+    let dbEl = document.getElementById('dashBalance');
+    if(dbEl) dbEl.innerText = `${balance}`; 
+
+    // أنيميشن دائرة الرصيد (تقيس الرصيد المتبقي مقارنة بإجمالي الدخل)
+    let bPercent = totalIncome > 0 ? Math.max(0, (balance / totalIncome) * 100) : (balance > 0 ? 100 : 0);
+    let fillB = document.getElementById('fillFinance');
+    if(fillB) fillB.setAttribute('stroke-dasharray', `${bPercent}, 100`);
+
+    let resetDate = localStorage.getItem('fp_stats_reset') || "2000-01-01";
+    const canvasEl = document.getElementById('tasksChart'); 
+    if(!canvasEl) return; 
+    
+    const ctx = canvasEl.getContext('2d');
+    if(typeof myChart !== 'undefined' && myChart !== null) { myChart.destroy(); }
+    
+    let labels = []; let dataDone = []; let dataPending = [];
+    for(let i=6; i>=0; i--) { 
+        let d = new Date(); d.setDate(d.getDate() - i); 
+        let dateStr = new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().split('T')[0]; 
+        labels.push(d.toLocaleDateString(currentLang==='ar'?'ar-EG':'en-US', {weekday: 'short'}));
+        let dayTasks = tasks.filter(t => t.date === dateStr && t.date >= resetDate); 
+        dataDone.push(dayTasks.filter(t => t.completed).length); 
+        dataPending.push(dayTasks.filter(t => !t.completed).length);
+    } 
+    
+    let primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#25D366';
+    myChart = new Chart(ctx, { 
+        type: 'bar', 
+        data: { labels: labels, datasets: [ { label: i18n[currentLang].chart_done, data: dataDone, backgroundColor: primaryColor }, { label: i18n[currentLang].chart_pend, data: dataPending, backgroundColor: '#ef4444' } ] }, 
+        options: { responsive: true, scales: { y: { beginAtZero: true, ticks: {stepSize: 1} } } } 
+    });
+}
 function renderFinance() { const container = document.getElementById('financeContainer'); let inc = 0, exp = 0; let html = finances.sort((a,b) => new Date(b.date) - new Date(a.date)).map(f => { if(f.type === 'income') inc += Number(f.amount); else exp += Number(f.amount); let icon = f.type === 'income' ? '<i class="fa-solid fa-arrow-trend-up"></i>' : '<i class="fa-solid fa-arrow-trend-down"></i>'; let bgStyle = f.type === 'income' ? 'border: 1px solid var(--success); background-color: rgba(16, 185, 129, 0.05);' : 'border: 1px solid var(--danger); background-color: rgba(239, 68, 68, 0.05);'; return `<div class="fin-item" style="cursor:pointer; transition: all 0.3s ease; ${bgStyle}" onclick="editFin(${f.id})"><div><small>${f.date}</small><br><b>${f.desc}</b></div><div style="display:flex; align-items:center; gap:15px;"><span class="fin-amt ${f.type === 'income' ? 'inc' : 'exp'}">${icon} ${f.amount}</span><button class="icon-btn no-print" onclick="event.stopPropagation(); delFin(${f.id})"><i class="fa-solid fa-trash"></i></button></div></div>`; }).join(''); document.getElementById('totalIncome').innerText = inc; document.getElementById('totalExpense').innerText = exp; document.getElementById('netBalance').innerText = inc - exp; container.innerHTML = html || `<p style="text-align:center; color:var(--text-muted);">${currentLang==='ar'?'لا توجد معاملات.':'No transactions yet.'}</p>`; }
 document.getElementById('saveFinBtn').onclick = () => { let desc = document.getElementById('finDesc').value; let amt = document.getElementById('finAmount').value; if(!desc || !amt) return; finances.push({ id: Date.now(), desc: desc, amount: amt, type: document.getElementById('finType').value, date: document.getElementById('finDate').value }); saveAll(); document.getElementById('financeModal').classList.remove('show'); renderFinance(); renderDashboard(); };
 window.editFin = (id) => { let f = finances.find(x => x.id === id); if(!f) return; document.getElementById('editFinId').value = f.id;

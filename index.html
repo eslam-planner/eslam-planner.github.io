@@ -79,10 +79,46 @@
                     </div>
                 </div>
                 <div class="dash-grid">
-                    <div class="dash-card"><h3 data-i18n="card_tasks">المهام اليوم</h3><p id="dashTasks" class="dash-num">0/0</p></div>
-                    <div class="dash-card"><h3 data-i18n="card_bal">الرصيد المتاح</h3><p id="dashBalance" class="dash-num" style="color: var(--success);">0</p></div>
-                    <div class="dash-card"><h3 data-i18n="card_habits">إنجاز العادات</h3><p id="dashHabits" class="dash-num" style="color: var(--primary);">0%</p></div>
-                    <div class="dash-card"><h3 data-i18n="card_pomodoro_blocks">جلسات التركيز اليوم</h3><p id="dashPomodoro" class="dash-num" style="color: #ef4444;">0</p></div>
+                    <div class="dash-card" style="text-align: center;">
+                        <h3 data-i18n="card_tasks" style="margin-bottom: 5px;">المهام اليوم</h3>
+                        <div class="circ-progress">
+                            <svg viewBox="0 0 36 36" class="circ-svg">
+                                <path class="circ-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                <path class="circ-fill" id="fillTasks" stroke="var(--primary)" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            </svg>
+                            <div class="circ-text" id="dashTasks">0/0</div>
+                        </div>
+                    </div>
+                    <div class="dash-card" style="text-align: center;">
+                        <h3 data-i18n="card_bal" style="margin-bottom: 5px;">الرصيد المتاح</h3>
+                        <div class="circ-progress">
+                            <svg viewBox="0 0 36 36" class="circ-svg">
+                                <path class="circ-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                <path class="circ-fill" id="fillFinance" stroke="var(--success)" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            </svg>
+                            <div class="circ-text" id="dashBalance" style="color: var(--success);">0</div>
+                        </div>
+                    </div>
+                    <div class="dash-card" style="text-align: center;">
+                        <h3 data-i18n="card_habits" style="margin-bottom: 5px;">إنجاز العادات</h3>
+                        <div class="circ-progress">
+                            <svg viewBox="0 0 36 36" class="circ-svg">
+                                <path class="circ-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                <path class="circ-fill" id="fillHabits" stroke="#8b5cf6" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            </svg>
+                            <div class="circ-text" id="dashHabits" style="color: #8b5cf6;">0%</div>
+                        </div>
+                    </div>
+                    <div class="dash-card" style="text-align: center;">
+                        <h3 data-i18n="card_pomodoro_blocks" style="margin-bottom: 5px;">جلسات التركيز</h3>
+                        <div class="circ-progress">
+                            <svg viewBox="0 0 36 36" class="circ-svg">
+                                <path class="circ-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                <path class="circ-fill" id="fillPomodoro" stroke="#ef4444" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            </svg>
+                            <div class="circ-text" id="dashPomodoro" style="color: #ef4444;">0</div>
+                        </div>
+                    </div>
                 </div>
                 <div class="chart-container" style="background: var(--card-bg); padding: 20px; border-radius: 12px; margin-top: 20px; border: 1px solid var(--border-color);">
                     <canvas id="tasksChart" height="100"></canvas>
