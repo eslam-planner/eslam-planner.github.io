@@ -1,15 +1,23 @@
 // 1. سجل التحديثات (اكتب تحديثاتك هنا في كل إصدار جديد)
 const latestReleaseNotes = {
     ar: [
-        "تحسين سرعة استجابة التطبيق بشكل عام."
+        "📊 مؤشر الميزانية الدائري: رسم بياني تفاعلي يعرض نسبة استهلاكك من الرصيد.",
+        "🏷️ نظام التصنيفات الذكية: تصنيف المعاملات (طعام، مواصلات، فواتير...) بدعم اللغتين.",
+        "🎯 الميزانية الشهرية: حدد ميزانيتك واحصل على تنبيهات ذكية عند تخطي الحد الآمن.",
+        "📅 الفلترة والبحث المتقدم: ابحث بالاسم، أو اعرض معاملات (هذا الشهر/الشهر الماضي) بضغطة زر.",
+        "🎙️ الإملاء الصوتي: أضفنا زر المايكرفون لتسجيل معاملاتك المالية بالصوت بسرعة وسهولة."
     ],
     en: [
-        "Improved overall app responsiveness."
+        "📊 Budget Index Chart: Interactive visual tracker for your expenses vs balance.",
+        "🏷️ Smart Categories: Categorize transactions (Food, Transport, Bills...) bilingually.",
+        "🎯 Monthly Budget Limits: Set a budget and get smart alerts before you overspend.",
+        "📅 Advanced Filters & Search: Quick search by name or filter by current/last month.",
+        "🎙️ Voice Dictation: Added a mic button to log financial transactions effortlessly."
     ]
 };
 
 // كود إظهار صندوق التحديثات التلقائي
-const APP_VERSION = 'v17'; // يجب تغييره هنا مع كل تحديث رئيسي مستقبلاً
+const APP_VERSION = 'v24'; // تم التحديث للإصدار 24
 function checkAndShowChangelog() {
     const savedVersion = localStorage.getItem('fp_version');
     if(savedVersion !== APP_VERSION) {
@@ -119,8 +127,12 @@ const i18n = {
         pom_work_log: "جلسة تركيز عمل",
         pom_break_log: "جلسة استراحة ونقاهة",
         pom_no_log: "لم يتم تسجيل أي جلسات تركيز بعد.",
-        title_quick_dump: "تفريغ الدماغ السريع ⚡", btn_qd_kanban: "كمشروع", btn_qd_note: "كملاحظة"
-    },  
+        title_quick_dump: "تفريغ الدماغ السريع ⚡", btn_qd_kanban: "كمشروع", btn_qd_note: "كملاحظة",
+        empty_state_title: "لوحتك بيضاء بانتظار إنجازاتك! ✨", empty_state_desc: "الرسم البياني نائم الآن.. ابدأ بإنجاز أول مهمة لتشغيله.",
+        doughnut_title: "مؤشر النشاط الشامل 📊",
+        budget_index: "مؤشر الميزانية 📊", opt_inc: "إيراد (+)", opt_exp: "مصروف (-)",
+        cat_other: "أخرى", cat_food: "🍔 طعام", cat_trans: "🚕 مواصلات", cat_shop: "🛒 تسوق", cat_bills: "💡 فواتير", cat_work: "💻 عمل", cat_fun: "🎉 ترفيه"
+    },
     en: {
         nav_dash: "Dashboard", nav_month: "Monthly Plan", nav_today: "Today", nav_pomodoro: "Focus Timer", nav_kanban: "Projects", nav_habits: "Habit Tracker", nav_finance: "Finance", nav_lib: "Library", nav_notes: "Notes", nav_settings: "Settings & Sync",
         btn_invite: "Invite", btn_install: "Install App",
@@ -146,7 +158,11 @@ const i18n = {
         pom_work_log: "Focus Work Session",
         pom_break_log: "Rest & Break Session",
         pom_no_log: "No focus sessions logged yet.",
-        title_quick_dump: "Quick Brain Dump ⚡", btn_qd_kanban: "As Project", btn_qd_note: "As Note"
+        title_quick_dump: "Quick Brain Dump ⚡", btn_qd_kanban: "As Project", btn_qd_note: "As Note",
+        empty_state_title: "Your canvas is blank! ✨", empty_state_desc: "Charts are sleeping.. Complete a task to wake them up.",
+        doughnut_title: "Overall Activity Index 📊",
+        budget_index: "Budget Index 📊", opt_inc: "Income (+)", opt_exp: "Expense (-)",
+        cat_other: "Other", cat_food: "🍔 Food", cat_trans: "🚕 Transport", cat_shop: "🛒 Shopping", cat_bills: "💡 Bills", cat_work: "💻 Work", cat_fun: "🎉 Entertainment"
     }
 };
 
@@ -158,6 +174,16 @@ function setLanguage(lang) {
     const toggleBtn = document.getElementById('langLabel'); if(toggleBtn) toggleBtn.innerHTML = lang === 'ar' ? 'EN' : 'AR';
     const kbInp = document.getElementById('newKbItem'); if(kbInp) kbInp.placeholder = lang === 'ar' ? 'اكتب اسم المشروع / المهمة هنا... (اضغط Enter لسطر جديد)' : 'Type project name... (Press Enter for new line)';
     const hbInp = document.getElementById('newHabitInput'); if(hbInp) hbInp.placeholder = lang === 'ar' ? 'عادة جديدة...' : 'New habit...';
+    
+    // حقن التصنيفات المترجمة بذكاء حسب اللغة الحالية
+    const categoriesList = [
+        {val: 'other', label: i18n[lang].cat_other}, {val: 'food', label: i18n[lang].cat_food},
+        {val: 'transport', label: i18n[lang].cat_trans}, {val: 'shopping', label: i18n[lang].cat_shop},
+        {val: 'bills', label: i18n[lang].cat_bills}, {val: 'work', label: i18n[lang].cat_work}, {val: 'fun', label: i18n[lang].cat_fun}
+    ];
+    let catHtml = categoriesList.map(c => `<option value="${c.val}">${c.label}</option>`).join('');
+    let finCat = document.getElementById('finCategory'); let editFinCat = document.getElementById('editFinCategory');
+    if(finCat) finCat.innerHTML = catHtml; if(editFinCat) editFinCat.innerHTML = catHtml;
 }
 
 function initColorTheme() {
@@ -934,12 +960,216 @@ function renderDashboard() {
         options: { responsive: true, scales: { y: { beginAtZero: true, ticks: {stepSize: 1} } } } 
     });
 }
-function renderFinance() { const container = document.getElementById('financeContainer'); let inc = 0, exp = 0; let html = finances.sort((a,b) => new Date(b.date) - new Date(a.date)).map(f => { if(f.type === 'income') inc += Number(f.amount); else exp += Number(f.amount); let icon = f.type === 'income' ? '<i class="fa-solid fa-arrow-trend-up"></i>' : '<i class="fa-solid fa-arrow-trend-down"></i>'; let bgStyle = f.type === 'income' ? 'border: 1px solid var(--success); background-color: rgba(16, 185, 129, 0.05);' : 'border: 1px solid var(--danger); background-color: rgba(239, 68, 68, 0.05);'; return `<div class="fin-item" style="cursor:pointer; transition: all 0.3s ease; ${bgStyle}" onclick="editFin(${f.id})"><div><small>${f.date}</small><br><b>${f.desc}</b></div><div style="display:flex; align-items:center; gap:15px;"><span class="fin-amt ${f.type === 'income' ? 'inc' : 'exp'}">${icon} ${f.amount}</span><button class="icon-btn no-print" onclick="event.stopPropagation(); delFin(${f.id})"><i class="fa-solid fa-trash"></i></button></div></div>`; }).join(''); document.getElementById('totalIncome').innerText = inc; document.getElementById('totalExpense').innerText = exp; document.getElementById('netBalance').innerText = inc - exp; container.innerHTML = html || `<p style="text-align:center; color:var(--text-muted);">${currentLang==='ar'?'لا توجد معاملات.':'No transactions yet.'}</p>`; }
-document.getElementById('saveFinBtn').onclick = () => { let desc = document.getElementById('finDesc').value; let amt = document.getElementById('finAmount').value; if(!desc || !amt) return; finances.push({ id: Date.now(), desc: desc, amount: amt, type: document.getElementById('finType').value, date: document.getElementById('finDate').value }); saveAll(); document.getElementById('financeModal').classList.remove('show'); renderFinance(); renderDashboard(); };
-window.editFin = (id) => { let f = finances.find(x => x.id === id); if(!f) return; document.getElementById('editFinId').value = f.id;
-document.getElementById('editFinDesc').value = f.desc; document.getElementById('editFinAmount').value = f.amount; document.getElementById('editFinType').value = f.type; document.getElementById('editFinDate').value = f.date; document.getElementById('editFinModal').classList.add('show'); setTimeout(() => { if(window.updateFinColor) updateFinColor('editFinType', 'editFinAmount'); }, 50); };
-document.getElementById('updateFinBtn').onclick = () => { let id = parseInt(document.getElementById('editFinId').value); let desc = document.getElementById('editFinDesc').value; let amt = document.getElementById('editFinAmount').value; if(!desc || !amt) return; let f = finances.find(x => x.id === id); if(f) { f.desc = desc; f.amount = amt; f.type = document.getElementById('editFinType').value; f.date = document.getElementById('editFinDate').value; saveAll(); renderFinance(); renderDashboard(); document.getElementById('editFinModal').classList.remove('show'); } };
-window.delFin = id => { finances = finances.filter(f => f.id !== id); saveAll(); renderFinance(); renderDashboard(); }
+let finChartInstance = null; 
+
+function renderFinance() { 
+    const container = document.getElementById('financeContainer'); 
+    let inc = 0, exp = 0;
+    
+    // 1. ترجمة نصوص الميزانية وأدوات الفلترة
+    const budgetTitle = document.getElementById('budgetTitleText');
+    const btnSetBudget = document.getElementById('btnSetBudget');
+    const searchInput = document.getElementById('financeSearchInput');
+    const monthFilter = document.getElementById('financeMonthFilter');
+
+    if(budgetTitle && btnSetBudget) {
+        budgetTitle.innerText = currentLang === 'ar' ? 'الميزانية الشهرية' : 'Monthly Budget';
+        btnSetBudget.innerText = currentLang === 'ar' ? 'تحديد الميزانية' : 'Set Budget';
+    }
+    if(searchInput && monthFilter) {
+        searchInput.placeholder = currentLang === 'ar' ? 'بحث عن معاملة...' : 'Search transactions...';
+        monthFilter.options[0].text = currentLang === 'ar' ? 'كل الأشهر' : 'All Months';
+        monthFilter.options[1].text = currentLang === 'ar' ? 'هذا الشهر' : 'This Month';
+        monthFilter.options[2].text = currentLang === 'ar' ? 'الشهر الماضي' : 'Last Month';
+    }
+
+    // 2. محرك الفلترة والبحث
+    let searchQuery = searchInput ? searchInput.value.toLowerCase() : '';
+    let filterValue = monthFilter ? monthFilter.value : 'all';
+    
+    let currentDate = new Date();
+    let currentMonthStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+    
+    let lastMonthDate = new Date();
+    lastMonthDate.setMonth(lastMonthDate.getMonth() - 1);
+    let lastMonthStr = `${lastMonthDate.getFullYear()}-${String(lastMonthDate.getMonth() + 1).padStart(2, '0')}`;
+
+    let filteredFinances = finances.filter(f => {
+        let matchesSearch = f.desc.toLowerCase().includes(searchQuery) || (f.category && f.category.toLowerCase().includes(searchQuery));
+        let matchesMonth = true;
+        if(filterValue === 'current') {
+            matchesMonth = f.date.startsWith(currentMonthStr);
+        } else if(filterValue === 'last') {
+            matchesMonth = f.date.startsWith(lastMonthStr);
+        }
+        return matchesSearch && matchesMonth;
+    });
+
+    // رسم المعاملات بعد الفلترة
+    let html = filteredFinances.sort((a,b) => new Date(b.date) - new Date(a.date)).map(f => { 
+        if(f.type === 'income') inc += Number(f.amount); 
+        else exp += Number(f.amount); 
+        
+        let icon = f.type === 'income' ? '<i class="fa-solid fa-arrow-trend-up"></i>' : '<i class="fa-solid fa-arrow-trend-down"></i>'; 
+        let bgStyle = f.type === 'income' ? 'border: 1px solid var(--success); background-color: rgba(16, 185, 129, 0.05);' : 'border: 1px solid var(--danger); background-color: rgba(239, 68, 68, 0.05);'; 
+        
+        let catLabel = f.category || '';
+        if (f.category === 'other' || f.category === 'أخرى') catLabel = i18n[currentLang].cat_other;
+        else if (f.category === 'food' || f.category === '🍔 طعام') catLabel = i18n[currentLang].cat_food;
+        else if (f.category === 'transport' || f.category === '🚕 مواصلات') catLabel = i18n[currentLang].cat_trans;
+        else if (f.category === 'shopping' || f.category === '🛒 تسوق') catLabel = i18n[currentLang].cat_shop;
+        else if (f.category === 'bills' || f.category === '💡 فواتير') catLabel = i18n[currentLang].cat_bills;
+        else if (f.category === 'work' || f.category === '💻 عمل') catLabel = i18n[currentLang].cat_work;
+        else if (f.category === 'fun' || f.category === '🎉 ترفيه') catLabel = i18n[currentLang].cat_fun;
+
+        let catBadge = catLabel ? `<span style="background:var(--bg-color); padding:3px 8px; border-radius:6px; font-size:0.75rem; margin-right:8px; border:1px solid var(--border-color);">${catLabel}</span>` : '';
+        
+        return `<div class="fin-item" style="cursor:pointer; transition: all 0.3s ease; ${bgStyle}" onclick="editFin(${f.id})">
+            <div>
+                <small>${f.date}</small><br>
+                <b style="color: var(--text-main);">${f.desc}</b> ${catBadge}
+            </div>
+            <div style="display:flex; align-items:center; gap:15px;">
+                <span class="fin-amt ${f.type === 'income' ? 'inc' : 'exp'}">${icon} ${f.amount}</span>
+                <button class="icon-btn no-print" onclick="event.stopPropagation(); delFin(${f.id})"><i class="fa-solid fa-trash"></i></button>
+            </div>
+        </div>`; 
+    }).join('');
+    
+    document.getElementById('totalIncome').innerText = inc; 
+    document.getElementById('totalExpense').innerText = exp; 
+    document.getElementById('netBalance').innerText = inc - exp; 
+    if(container) container.innerHTML = html || `<p style="text-align:center; color:var(--text-muted);">${currentLang==='ar'?'لا توجد معاملات مطابقة.':'No transactions found.'}</p>`; 
+
+    // 3. تحديث الرسم البياني (عداد السرعة بناءً على الفلترة)
+    const ctx = document.getElementById('financeChart');
+    if(ctx && window.Chart) {
+        if(finChartInstance) finChartInstance.destroy();
+        
+        let remaining = inc - exp;
+        let dataArr = (inc === 0 && exp === 0) ? [1] : [exp, Math.max(0, remaining)];
+        let bgColors = (inc === 0 && exp === 0) ? ['#e5e7eb'] : ['#ef4444', '#10b981'];
+        let labelsArr = (inc === 0 && exp === 0) ? 
+                        (currentLang === 'ar' ? ['لا توجد بيانات'] : ['No Data']) : 
+                        (currentLang === 'ar' ? ['المصروفات', 'الرصيد المتبقي'] : ['Expenses', 'Remaining Balance']);
+
+        finChartInstance = new Chart(ctx, {
+            type: 'doughnut',
+            data: { labels: labelsArr, datasets: [{ data: dataArr, backgroundColor: bgColors, borderWidth: 0, hoverOffset: 6 }] },
+            options: { responsive: true, maintainAspectRatio: false, circumference: 180, rotation: -90, cutout: '75%', plugins: { legend: { position: 'bottom', labels: { color: '#6b7280', font: {family: 'Inter'} } } } }
+        });
+    }
+
+    // 4. برمجة الميزانية الذكية بناءً على المصروفات المعروضة (المفلترة)
+    let budgetLimit = parseFloat(localStorage.getItem('fp_monthly_budget')) || 0;
+    let budgetBar = document.getElementById('budgetProgressBar');
+    let budgetSpentText = document.getElementById('budgetSpentText');
+    let budgetLimitText = document.getElementById('budgetLimitText');
+    let budgetAlert = document.getElementById('budgetAlertText');
+
+    if(budgetBar && budgetSpentText && budgetLimitText) {
+        budgetLimitText.innerText = budgetLimit > 0 ? (currentLang === 'ar' ? `الميزانية: ${budgetLimit}` : `Budget: ${budgetLimit}`) : (currentLang === 'ar' ? 'لم يتم التحديد' : 'Not set');
+        budgetSpentText.innerText = currentLang === 'ar' ? `تم صرف: ${exp}` : `Spent: ${exp}`;
+
+        if(budgetLimit > 0) {
+            let percent = (exp / budgetLimit) * 100;
+            if(percent > 100) percent = 100;
+            budgetBar.style.width = percent + '%';
+            
+            if(percent < 75) {
+                budgetBar.style.backgroundColor = 'var(--success)';
+                if(budgetAlert) budgetAlert.style.display = 'none';
+            } else if(percent < 90) {
+                budgetBar.style.backgroundColor = 'var(--warning)';
+                if(budgetAlert) {
+                    budgetAlert.style.display = 'block';
+                    budgetAlert.style.color = 'var(--warning)';
+                    budgetAlert.innerText = currentLang === 'ar' ? '⚠️ انتبه: اقتربت من تخطي الميزانية!' : '⚠️ Alert: Nearing budget limit!';
+                }
+            } else {
+                budgetBar.style.backgroundColor = 'var(--danger)';
+                if(budgetAlert) {
+                    budgetAlert.style.display = 'block';
+                    budgetAlert.style.color = 'var(--danger)';
+                    budgetAlert.innerText = currentLang === 'ar' ? '🚨 تحذير: لقد تخطيت الميزانية الآمنة!' : '🚨 Warning: Budget limit exceeded!';
+                }
+            }
+        } else {
+            budgetBar.style.width = '0%';
+            if(budgetAlert) budgetAlert.style.display = 'none';
+        }
+    }
+}
+
+// دالة تحديد الميزانية
+window.setMonthlyBudget = () => {
+    let currentBudget = localStorage.getItem('fp_monthly_budget') || '';
+    let msg = currentLang === 'ar' ? 'أدخل الحد الأقصى للمصروفات هذا الشهر (مثلاً: 5000):' : 'Enter your maximum monthly budget limit:';
+    let val = prompt(msg, currentBudget);
+    if(val !== null && val.trim() !== '' && !isNaN(val)) {
+        localStorage.setItem('fp_monthly_budget', val);
+        renderFinance();
+    } else if (val !== null && val.trim() === '') {
+        localStorage.removeItem('fp_monthly_budget');
+        renderFinance();
+    }
+};
+
+document.getElementById('saveFinBtn').onclick = () => { 
+    let desc = document.getElementById('finDesc').value; 
+    let amt = document.getElementById('finAmount').value;
+    let catEl = document.getElementById('finCategory');
+    let cat = catEl ? catEl.value : 'other';
+
+    if(!desc || !amt) return; 
+    finances.push({ 
+        id: Date.now(), desc: desc, amount: amt, type: document.getElementById('finType').value, category: cat, date: document.getElementById('finDate').value 
+    }); 
+    saveAll(); 
+    document.getElementById('financeModal').classList.remove('show'); 
+    stopContinuousDictation(); // إيقاف المايكرفون فوراً بعد الحفظ
+    renderFinance(); 
+    renderDashboard();
+};
+
+window.editFin = (id) => { 
+    let f = finances.find(x => x.id === id); 
+    if(!f) return; 
+    document.getElementById('editFinId').value = f.id; document.getElementById('editFinDesc').value = f.desc; 
+    document.getElementById('editFinAmount').value = f.amount; document.getElementById('editFinType').value = f.type; 
+    let catEl = document.getElementById('editFinCategory');
+    if(catEl) catEl.value = f.category || 'other';
+    document.getElementById('editFinDate').value = f.date; 
+    document.getElementById('editFinModal').classList.add('show');
+    setTimeout(() => { if(window.updateFinColor) updateFinColor('editFinType', 'editFinAmount'); }, 50); 
+};
+
+document.getElementById('updateFinBtn').onclick = () => { 
+    let id = parseInt(document.getElementById('editFinId').value);
+    let desc = document.getElementById('editFinDesc').value; 
+    let amt = document.getElementById('editFinAmount').value; 
+    if(!desc || !amt) return; 
+    
+    let f = finances.find(x => x.id === id);
+    if(f) { 
+        f.desc = desc; f.amount = amt; f.type = document.getElementById('editFinType').value; 
+        let catEl = document.getElementById('editFinCategory');
+        if(catEl) f.category = catEl.value;
+        f.date = document.getElementById('editFinDate').value; 
+        saveAll(); 
+        renderFinance(); 
+        renderDashboard(); 
+        document.getElementById('editFinModal').classList.remove('show'); 
+        stopContinuousDictation(); // إيقاف المايكرفون فوراً بعد التحديث
+    } 
+};
+
+window.delFin = id => { 
+    finances = finances.filter(f => f.id !== id); 
+    saveAll(); 
+    renderFinance(); 
+    renderDashboard(); 
+};
 function renderHabits() { let dim = new Date(currentYearView, currentMonthView + 1, 0).getDate(); let habitText = currentLang === 'ar' ? 'العادة' : 'Habit'; let html = `<table class="habit-table"><thead><tr><th>${habitText}</th>`; for(let i=1; i<=dim; i++) html += `<th>${i}</th>`; html += `</tr></thead><tbody>`; habits.forEach(h => { html += `<tr><td class="habit-name"><button class="icon-btn no-print" style="color:red;" onclick="delHabit(${h.id})">x</button> ${h.name}</td>`; for(let i=1; i<=dim; i++) { let k = `${currentYearView}-${currentMonthView}-${i}`; html += `<td><div class="habit-check ${h.days[k]?'done':''}" onclick="toggleHabit(${h.id}, '${k}')">✓</div></td>`; } html += `</tr>`; }); document.getElementById('habitsContainer').innerHTML = html + `</tbody></table>`; }
 window.addNewHabit = () => { const inp = document.getElementById('newHabitInput'); if(inp.value.trim()){ habits.push({id:Date.now(), name:inp.value, days:{}}); saveAll(); inp.value=''; renderHabits(); renderDashboard(); } }
 window.toggleHabit = (id, k) => { let h = habits.find(x=>x.id===id); h.days[k] = !h.days[k]; saveAll(); renderHabits(); renderDashboard(); }

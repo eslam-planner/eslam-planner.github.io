@@ -135,7 +135,39 @@
                     </div>
                 </div>
                 <div class="finance-summary"><div class="fin-box fin-income"><span data-i18n="fin_inc">الدخل</span><h3 id="totalIncome">0</h3></div><div class="fin-box fin-expense"><span data-i18n="fin_exp">المصروفات</span><h3 id="totalExpense">0</h3></div><div class="fin-box fin-balance"><span data-i18n="fin_bal">الرصيد</span><h3 id="netBalance">0</h3></div></div>
-                <div class="finance-list" id="financeContainer"></div>
+                <div style="background: var(--card-bg); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); margin: 20px 0; text-align: center;">
+                    <h4 style="margin-bottom: 10px; color: var(--text-main); font-size: 1rem; font-weight: 600;" data-i18n="budget_index">مؤشر الميزانية 📊</h4>
+                    <div style="position: relative; width: 100%; max-width: 300px; height: 160px; margin: auto;">
+                        <canvas id="financeChart"></canvas>
+                    </div>
+                </div>
+
+                <div style="background: var(--card-bg); padding: 15px; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <h4 style="margin: 0; color: var(--text-main); font-size: 1rem;" id="budgetTitleText">الميزانية الشهرية</h4>
+                        <button onclick="setMonthlyBudget()" class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.8rem;" id="btnSetBudget">تحديد الميزانية</button>
+                    </div>
+                    <div class="prog-bg" style="height: 10px; background: var(--border-color); border-radius: 10px; overflow: hidden; margin-bottom: 5px;">
+                        <div id="budgetProgressBar" style="height: 100%; width: 0%; background: var(--success); transition: width 0.8s ease, background-color 0.8s ease;"></div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">
+                        <span id="budgetSpentText">0</span>
+                        <span id="budgetLimitText">0</span>
+                    </div>
+                    <p id="budgetAlertText" style="display: none; color: var(--danger); font-size: 0.85rem; font-weight: bold; text-align: center; margin-top: 10px; animation: taskSuccessPulse 0.5s ease-in-out;">⚠️ اقتربت من تخطي الميزانية!</p>
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <input type="text" id="financeSearchInput" placeholder="بحث عن معاملة..." style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main);" onkeyup="renderFinance()">
+                    
+                    <select id="financeMonthFilter" style="padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main); font-weight: bold;" onchange="renderFinance()">
+                        <option value="all">كل الأشهر</option>
+                        <option value="current">هذا الشهر</option>
+                        <option value="last">الشهر الماضي</option>
+                    </select>
+                </div>
+
+                <div id="financeContainer" class="fin-list"></div>
             </div>
 
             <div id="libraryView" class="view-section">
@@ -309,9 +341,79 @@
             <div class="modal-actions"><button class="btn btn-secondary close-modal" data-i18n="btn_cancel">إلغاء</button><button id="updateNoteBtn" class="btn btn-primary" data-i18n="btn_update">تحديث</button></div>
         </div>
     </div>
+<!-- المودال الخاص بالمالية -->
+    <div id="financeModal" class="modal">
+        <div class="modal-content">
+            <h3 data-i18n="btn_add_trans">إضافة معاملة</h3>
+            <input type="text" id="finDesc" placeholder="الوصف" required>
+            
+            <!-- شريط التسجيل الصوتي -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; margin-bottom: 5px; background: rgba(37, 211, 102, 0.1); padding: 8px; border-radius: 6px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size:0.85rem; color:var(--text-main); font-weight:600;" id="dictateStatusFin" data-i18n="lib_dictate_hint">المحتوى</span>
+                    <select id="dictateLangFin" class="no-print" style="padding: 2px 5px; font-size: 0.8rem; border-radius: 4px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main);">
+                        <option value="ar-EG">عربي</option>
+                        <option value="en-US">English</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap:5px;">
+                    <button type="button" onclick="startContinuousDictation('finDesc', 'dictateLangFin', 'dictateStatusFin', 'startDicFin', 'stopDicFin')" id="startDicFin" class="icon-btn" style="color:var(--primary); font-size: 1.2rem;" title="بدء التسجيل"><i class="fa-solid fa-microphone"></i></button>
+                    <button type="button" onclick="stopContinuousDictation()" id="stopDicFin" class="icon-btn" style="color:var(--danger); font-size: 1.2rem; display:none;" title="إيقاف التسجيل"><i class="fa-solid fa-square"></i></button>
+                </div>
+            </div>
 
-    <div id="financeModal" class="modal"><div class="modal-content"><h3 data-i18n="btn_add_trans">إضافة معاملة</h3><input type="text" id="finDesc" placeholder="الوصف" required><div class="input-group"><input type="number" id="finAmount" placeholder="المبلغ" required style="transition:0.3s;"><select id="finType" onchange="updateFinColor('finType', 'finAmount')" style="transition:0.3s; font-weight:bold;"><option value="income" style="color:green;">إيراد (+)</option><option value="expense" style="color:red;">مصروف (-)</option></select></div><input type="date" id="finDate" style="margin-top:10px;"><div class="modal-actions"><button class="btn btn-secondary close-modal" data-i18n="btn_cancel">إلغاء</button><button id="saveFinBtn" class="btn btn-primary" data-i18n="btn_save">حفظ</button></div></div></div>
-    <div id="editFinModal" class="modal"><div class="modal-content"><h3 data-i18n="btn_edit_trans">تعديل المعاملة</h3><input type="hidden" id="editFinId"><input type="text" id="editFinDesc" required><div class="input-group"><input type="number" id="editFinAmount" required style="transition:0.3s;"><select id="editFinType" onchange="updateFinColor('editFinType', 'editFinAmount')" style="transition:0.3s; font-weight:bold;"><option value="income" style="color:green;">إيراد (+)</option><option value="expense" style="color:red;">مصروف (-)</option></select></div><input type="date" id="editFinDate" style="margin-top:10px;"><div class="modal-actions"><button class="btn btn-secondary close-modal" data-i18n="btn_cancel">إلغاء</button><button id="updateFinBtn" class="btn btn-primary" data-i18n="btn_update">تحديث</button></div></div></div>
+            <select id="finCategory" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-color); color: var(--text-main); margin-top: 10px;"></select>
+            <div class="input-group">
+                <input type="number" id="finAmount" placeholder="المبلغ" required style="transition:0.3s;">
+                <select id="finType" onchange="updateFinColor('finType', 'finAmount')" style="transition:0.3s; font-weight:bold;">
+                    <option value="income" style="color:green;" data-i18n="opt_inc">إيراد (+)</option>
+                    <option value="expense" style="color:red;" data-i18n="opt_exp">مصروف (-)</option>
+                </select>
+            </div>
+            <input type="date" id="finDate" style="margin-top:10px;">
+            <div class="modal-actions">
+                <button class="btn btn-secondary close-modal" data-i18n="btn_cancel">إلغاء</button>
+                <button id="saveFinBtn" class="btn btn-primary" data-i18n="btn_save">حفظ</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="editFinModal" class="modal">
+        <div class="modal-content">
+            <h3 data-i18n="btn_edit_trans">تعديل المعاملة</h3>
+            <input type="hidden" id="editFinId">
+            <input type="text" id="editFinDesc" required>
+            
+            <!-- شريط التسجيل الصوتي للتعديل -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; margin-bottom: 5px; background: rgba(37, 211, 102, 0.1); padding: 8px; border-radius: 6px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size:0.85rem; color:var(--text-main); font-weight:600;" id="dictateStatusEditFin" data-i18n="lib_dictate_hint">المحتوى</span>
+                    <select id="dictateLangEditFin" class="no-print" style="padding: 2px 5px; font-size: 0.8rem; border-radius: 4px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main);">
+                        <option value="ar-EG">عربي</option>
+                        <option value="en-US">English</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap:5px;">
+                    <button type="button" onclick="startContinuousDictation('editFinDesc', 'dictateLangEditFin', 'dictateStatusEditFin', 'startDicEditFin', 'stopDicEditFin')" id="startDicEditFin" class="icon-btn" style="color:var(--primary); font-size: 1.2rem;" title="بدء التسجيل"><i class="fa-solid fa-microphone"></i></button>
+                    <button type="button" onclick="stopContinuousDictation()" id="stopDicEditFin" class="icon-btn" style="color:var(--danger); font-size: 1.2rem; display:none;" title="إيقاف التسجيل"><i class="fa-solid fa-square"></i></button>
+                </div>
+            </div>
+
+            <select id="editFinCategory" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-color); color: var(--text-main); margin-top: 10px;"></select>
+            <div class="input-group">
+                <input type="number" id="editFinAmount" required style="transition:0.3s;">
+                <select id="editFinType" onchange="updateFinColor('editFinType', 'editFinAmount')" style="transition:0.3s; font-weight:bold;">
+                    <option value="income" style="color:green;" data-i18n="opt_inc">إيراد (+)</option>
+                    <option value="expense" style="color:red;" data-i18n="opt_exp">مصروف (-)</option>
+                </select>
+            </div>
+            <input type="date" id="editFinDate" style="margin-top:10px;">
+            <div class="modal-actions">
+                <button class="btn btn-secondary close-modal" data-i18n="btn_cancel">إلغاء</button>
+                <button id="updateFinBtn" class="btn btn-primary" data-i18n="btn_update">تحديث</button>
+            </div>
+        </div>
+    </div>
 
     <div id="libraryModal" class="modal">
         <div class="modal-content">
