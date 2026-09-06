@@ -316,17 +316,19 @@ function loadFromCloud() {
     db.collection('users').doc(currentUser.uid).get().then(doc => { 
         if (doc.exists) { 
             const data = doc.data(); 
-            if(Array.isArray(data.tasks)) tasks = data.tasks; 
-            if(Array.isArray(data.notes)) notes = data.notes; 
-            if(data.kanbanTasks && typeof data.kanbanTasks === 'object') kanbanTasks = data.kanbanTasks; 
-            if(Array.isArray(data.habits)) habits = data.habits; 
-            if(Array.isArray(data.finances)) finances = data.finances; 
-            if(Array.isArray(data.library)) library = data.library; 
-            if(data.profile) profile = data.profile; 
+            // دمج ذكي بدلاً من المسح الشامل
+            if(Array.isArray(data.tasks) && tasks.length === 0) tasks = data.tasks; 
+            if(Array.isArray(data.notes) && notes.length === 0) notes = data.notes; 
+            if(data.kanbanTasks && (!kanbanTasks.todo.length && !kanbanTasks.inprogress.length && !kanbanTasks.done.length)) kanbanTasks = data.kanbanTasks; 
+            if(Array.isArray(data.habits) && habits.length === 0) habits = data.habits; 
+            if(Array.isArray(data.finances) && finances.length === 0) finances = data.finances; 
+            if(Array.isArray(data.library) && library.length === 0) library = data.library; 
+            if(data.profile && !profile.name) profile = data.profile; 
             if(data.monthlyData) { 
-                for(let k in data.monthlyData) localStorage.setItem(k, data.monthlyData[k]); 
+                for(let k in data.monthlyData) {
+                    if(!localStorage.getItem(k)) localStorage.setItem(k, data.monthlyData[k]);
+                }
             } 
-            saveAll(); 
             renderViews(); 
         } 
     }).catch(e => console.error("Cloud load error:", e)); 
