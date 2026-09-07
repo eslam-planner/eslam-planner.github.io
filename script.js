@@ -1,20 +1,20 @@
 // 1. سجل التحديثات
 const latestReleaseNotes = {
     ar: [
-        "🗂️ إصلاح فشل الحفظ للحسابات القديمة: فصل الخطط الشهرية عن الملف الرئيسي في السحابة عشان مايتخطاش الحد الأقصى للحجم ويرجع يشتغل تاني.",
+        "🌐 إصلاح جذري لمشكلة المزامنة: حل تعارض بين نظام العمل بدون إنترنت (Service Worker) واتصال Firestore الفوري كان يمنع أي حفظ سحابي من الوصول للسيرفر.",
+        "🗂️ إصلاح فشل الحفظ للحسابات القديمة: فصل الخطط الشهرية عن الملف الرئيسي في السحابة عشان مايتخطاش الحد الأقصى للحجم.",
         "🔄 مزامنة فورية حقيقية بين الأجهزة: أي تعديل على جهاز يظهر تلقائياً على باقي أجهزتك المسجلة بنفس الحساب من غير Refresh.",
-        "🛡️ استقرار وحماية قصوى: تأمين التطبيق ضد ثغرات الحقن (XSS) في كل الأقسام.",
-        "🏦 محفظة المدخرات والاستثمار: متابعة دقيقة للأصول وصافي الثروة."
+        "🛡️ استقرار وحماية قصوى: تأمين التطبيق ضد ثغرات الحقن (XSS) في كل الأقسام."
     ],
     en: [
+        "🌐 Root-cause sync fix: resolved a conflict between the offline system (Service Worker) and Firestore's real-time connection that was blocking all cloud saves from reaching the server.",
         "🗂️ Fixed save failures on older accounts: monthly plans are now stored separately in the cloud so the main record can't hit the size limit.",
         "🔄 True real-time multi-device sync: changes on one device now appear automatically on your other signed-in devices, no refresh needed.",
-        "🛡️ Max Security & Stability: Secured the app against injection (XSS) vulnerabilities across all sections.",
-        "🏦 Savings & Investment Wallet: Track net worth and assets accurately."
+        "🛡️ Max Security & Stability: Secured the app against injection (XSS) vulnerabilities across all sections."
     ]
 };
 
-const APP_VERSION = 'v31';
+const APP_VERSION = 'v32';
 function checkAndShowChangelog() {
     const savedVersion = localStorage.getItem('fp_version');
     if(savedVersion !== APP_VERSION) {

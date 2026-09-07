@@ -1,10 +1,10 @@
-// ترقية الإصدار إلى v31 لإجبار كل الأجهزة على تحميل إصلاح مزامنة السحابة
-const CACHE_NAME = 'planner-pro-v31';
+// ترقية الإصدار إلى v32 لإجبار كل الأجهزة على تحميل إصلاح مزامنة السحابة
+const CACHE_NAME = 'planner-pro-v32';
 const assets = [
   './',
-  './index.html?v=31',
-  './style.css?v=31',
-  './script.js?v=31',
+  './index.html?v=32',
+  './style.css?v=32',
+  './script.js?v=32',
   './manifest.json'
 ];
 
@@ -29,6 +29,14 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
+  // متعرضش خالص لطلبات مواقع تانية غير موقعنا (زي Firebase/Firestore/Google APIs) —
+  // سيبها للمتصفح يتعامل معاها طبيعي زي ما لو مفيش Service Worker خالص.
+  // بدون السطر ده، الاتصال الفوري (WebChannel) بتاع Firestore بينكسر تماماً
+  // لأنه محتاج اتصال شبكة مباشر ومستمر مش ممكن يعدي من خلال طبقة كاش.
+  if (new URL(event.request.url).origin !== self.location.origin) {
+    return;
+  }
+
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request).catch(() => caches.match(event.request))
