@@ -253,6 +253,7 @@ function initColorTheme() {
 // تهيئة البيانات ومحرك الحفظ المحصن
 // ----------------------------------------
 let tasks = [], notes = [], profile = { name: '', phone: '' }, kanbanTasks = { todo: [], inprogress: [], done: [] }, habits = [], finances = [], library = [], pomodoroLog = [];
+let lastModified = parseInt(localStorage.getItem('fp_last_modified')) || 0;
 
 try { tasks = JSON.parse(localStorage.getItem('fp_tasks')) || []; } catch(e) { tasks = []; }
 try { notes = JSON.parse(localStorage.getItem('fp_notes')) || []; } catch(e) { notes = []; }
@@ -280,8 +281,8 @@ setInterval(() => {
     } 
 }, 60000);
 
-// دالة الحفظ المعزولة ضد الانهيار
-function saveAll() {
+// كتابة البيانات في localStorage فقط، من غير لمس الوقت أو السحابة
+function persistLocalOnly() {
     try {
         localStorage.setItem('fp_tasks', JSON.stringify(tasks));
         localStorage.setItem('fp_notes', JSON.stringify(notes));
@@ -291,9 +292,33 @@ function saveAll() {
         localStorage.setItem('fp_library', JSON.stringify(library));
         localStorage.setItem('fp_profile', JSON.stringify(profile));
         localStorage.setItem('fp_pomodoro_log', JSON.stringify(pomodoroLog));
+        localStorage.setItem('fp_last_modified', String(lastModified));
     } catch(err) {
         console.error("Local storage save error:", err);
     }
+}
+
+// إظهار/إخفاء تنبيه بصري لو فشلت آخر عملية مزامنة سحابية
+function setCloudSyncWarning(hasError) {
+    const cloudStatus = document.getElementById('cloudStatus');
+    if (!cloudStatus) return;
+    let warn = cloudStatus.querySelector('.sync-warning');
+    if (hasError && !warn) {
+        warn = document.createElement('span');
+        warn.className = 'sync-warning';
+        warn.style.cssText = 'color:var(--danger); margin-left:8px; font-weight:bold;';
+        warn.title = currentLang === 'ar' ? 'فشلت آخر مزامنة سحابية، بياناتك محفوظة محلياً فقط على هذا الجهاز' : 'Last cloud sync failed — your data is saved locally on this device only';
+        warn.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+        cloudStatus.appendChild(warn);
+    } else if (!hasError && warn) {
+        warn.remove();
+    }
+}
+
+// دالة الحفظ المعزولة ضد الانهيار
+function saveAll() {
+    lastModified = Date.now();
+    persistLocalOnly();
 
     if (useCloud && currentUser) { 
         try {
@@ -303,8 +328,13 @@ function saveAll() {
                 if(k && k.startsWith('PlannerMonthData_')) monthlyData[k] = localStorage.getItem(k); 
             } 
             db.collection('users').doc(currentUser.uid).set({ 
-                tasks, notes, kanbanTasks, habits, finances, library, profile, monthlyData 
-            }, {merge: true}).catch(e => console.error("Cloud save failed:", e)); 
+                tasks, notes, kanbanTasks, habits, finances, library, profile, monthlyData, lastModified 
+            }, {merge: true}).then(() => {
+                setCloudSyncWarning(false);
+            }).catch(e => {
+                console.error("Cloud save failed:", e);
+                setCloudSyncWarning(true);
+            }); 
         } catch(e) {
             console.error("Cloud data parsing error:", e);
         }
@@ -316,22 +346,35 @@ function loadFromCloud() {
     db.collection('users').doc(currentUser.uid).get().then(doc => { 
         if (doc.exists) { 
             const data = doc.data(); 
-            // دمج ذكي بدلاً من المسح الشامل
-            if(Array.isArray(data.tasks) && tasks.length === 0) tasks = data.tasks; 
-            if(Array.isArray(data.notes) && notes.length === 0) notes = data.notes; 
-            if(data.kanbanTasks && (!kanbanTasks.todo.length && !kanbanTasks.inprogress.length && !kanbanTasks.done.length)) kanbanTasks = data.kanbanTasks; 
-            if(Array.isArray(data.habits) && habits.length === 0) habits = data.habits; 
-            if(Array.isArray(data.finances) && finances.length === 0) finances = data.finances; 
-            if(Array.isArray(data.library) && library.length === 0) library = data.library; 
-            if(data.profile && !profile.name) profile = data.profile; 
+            const cloudTime = typeof data.lastModified === 'number' ? data.lastModified : 0;
+            const localIsEmpty = tasks.length === 0 && notes.length === 0 && habits.length === 0 &&
+                finances.length === 0 && library.length === 0 &&
+                kanbanTasks.todo.length === 0 && kanbanTasks.inprogress.length === 0 && kanbanTasks.done.length === 0;
+
+            // منع نسخة السحابة القديمة من مسح تعديلات محلية أحدث - بنطبقها بس لو أحدث فعلاً أو الجهاز فاضي
+            if (!localIsEmpty && cloudTime <= lastModified) {
+                setCloudSyncWarning(false);
+                return;
+            }
+
+            if(Array.isArray(data.tasks)) tasks = data.tasks; 
+            if(Array.isArray(data.notes)) notes = data.notes; 
+            if(data.kanbanTasks && typeof data.kanbanTasks === 'object') kanbanTasks = data.kanbanTasks; 
+            if(Array.isArray(data.habits)) habits = data.habits; 
+            if(Array.isArray(data.finances)) finances = data.finances; 
+            if(Array.isArray(data.library)) library = data.library; 
+            if(data.profile) profile = data.profile; 
             if(data.monthlyData) { 
-                for(let k in data.monthlyData) {
-                    if(!localStorage.getItem(k)) localStorage.setItem(k, data.monthlyData[k]);
-                }
+                for(let k in data.monthlyData) localStorage.setItem(k, data.monthlyData[k]); 
             } 
+            lastModified = cloudTime || Date.now();
+            persistLocalOnly(); 
             renderViews(); 
         } 
-    }).catch(e => console.error("Cloud load error:", e)); 
+    }).catch(e => {
+        console.error("Cloud load error:", e);
+        setCloudSyncWarning(true);
+    }); 
 }
 
 // ----------------------------------------
