@@ -1,20 +1,20 @@
 // 1. سجل التحديثات
 const latestReleaseNotes = {
     ar: [
-        "🛡️ استقرار وحماية قصوى: حل مشكلة توقف الحفظ نهائياً وتأمين التطبيق ضد ثغرات الحقن.",
-        "🚀 نظام تحديثات سلس v28: وصول التحديثات فورياً لجميع الأجهزة دون الحاجة لحذف التطبيق.",
+        "🔄 إصلاح فقدان البيانات مع المزامنة السحابية: لن يتم استبدال بياناتك المحلية الحديثة بنسخة سحابية قديمة بعد الآن.",
+        "🛡️ استقرار وحماية قصوى: تأمين التطبيق ضد ثغرات الحقن (XSS) في كل الأقسام.",
         "🏦 محفظة المدخرات والاستثمار: متابعة دقيقة للأصول وصافي الثروة.",
         "📊 مؤشرات بصرية مطورة: رسم بياني ثلاثي الأبعاد وإحصائيات فورية."
     ],
     en: [
-        "🛡️ Max Security & Stability: Completely resolved data-saving issues and secured against injection vulnerabilities.",
-        "🚀 Smooth Updates v28: Instant updates across all devices without re-installing.",
+        "🔄 Fixed cloud-sync data loss: your newer local data will no longer be overwritten by an older cloud copy.",
+        "🛡️ Max Security & Stability: Secured the app against injection (XSS) vulnerabilities across all sections.",
         "🏦 Savings & Investment Wallet: Track net worth and assets accurately.",
         "📊 Enhanced Visual Metrics: 3D Doughnut chart and live indicators."
     ]
 };
 
-const APP_VERSION = 'v28';
+const APP_VERSION = 'v29';
 function checkAndShowChangelog() {
     const savedVersion = localStorage.getItem('fp_version');
     if(savedVersion !== APP_VERSION) {

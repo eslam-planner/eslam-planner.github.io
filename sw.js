@@ -1,10 +1,10 @@
-// تم تصحيح الخطأ النحوي وترقية الإصدار إلى v28 لكسر الكاش
-const CACHE_NAME = 'planner-pro-v28';
+// ترقية الإصدار إلى v29 لإجبار كل الأجهزة على تحميل إصلاح مزامنة السحابة
+const CACHE_NAME = 'planner-pro-v29';
 const assets = [
   './',
-  './index.html?v=28',
-  './style.css?v=28',
-  './script.js?v=28',
+  './index.html?v=29',
+  './style.css?v=29',
+  './script.js?v=29',
   './manifest.json'
 ];
 
