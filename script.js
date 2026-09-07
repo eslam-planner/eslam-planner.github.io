@@ -1,20 +1,20 @@
 // 1. سجل التحديثات
 const latestReleaseNotes = {
     ar: [
+        "🗂️ إصلاح فشل الحفظ للحسابات القديمة: فصل الخطط الشهرية عن الملف الرئيسي في السحابة عشان مايتخطاش الحد الأقصى للحجم ويرجع يشتغل تاني.",
         "🔄 مزامنة فورية حقيقية بين الأجهزة: أي تعديل على جهاز يظهر تلقائياً على باقي أجهزتك المسجلة بنفس الحساب من غير Refresh.",
         "🛡️ استقرار وحماية قصوى: تأمين التطبيق ضد ثغرات الحقن (XSS) في كل الأقسام.",
-        "🏦 محفظة المدخرات والاستثمار: متابعة دقيقة للأصول وصافي الثروة.",
-        "📊 مؤشرات بصرية مطورة: رسم بياني ثلاثي الأبعاد وإحصائيات فورية."
+        "🏦 محفظة المدخرات والاستثمار: متابعة دقيقة للأصول وصافي الثروة."
     ],
     en: [
+        "🗂️ Fixed save failures on older accounts: monthly plans are now stored separately in the cloud so the main record can't hit the size limit.",
         "🔄 True real-time multi-device sync: changes on one device now appear automatically on your other signed-in devices, no refresh needed.",
         "🛡️ Max Security & Stability: Secured the app against injection (XSS) vulnerabilities across all sections.",
-        "🏦 Savings & Investment Wallet: Track net worth and assets accurately.",
-        "📊 Enhanced Visual Metrics: 3D Doughnut chart and live indicators."
+        "🏦 Savings & Investment Wallet: Track net worth and assets accurately."
     ]
 };
 
-const APP_VERSION = 'v30';
+const APP_VERSION = 'v31';
 function checkAndShowChangelog() {
     const savedVersion = localStorage.getItem('fp_version');
     if(savedVersion !== APP_VERSION) {
@@ -96,7 +96,7 @@ const firebaseConfig = {
     appId: "1:334354781516:web:d7d3b13ba7157d617d2be9",
 };
 
-let useCloud = false, auth, db, currentUser = null, cloudUnsubscribe = null;
+let useCloud = false, auth, db, currentUser = null, cloudUnsubscribe = [];
 if (firebaseConfig.apiKey && firebaseConfig.apiKey.length > 10) {
     try {
         firebase.initializeApp(firebaseConfig); 
@@ -112,7 +112,7 @@ if (firebaseConfig.apiKey && firebaseConfig.apiKey.length > 10) {
                 loadFromCloud();
             } else {
                 currentUser = null;
-                if (cloudUnsubscribe) { cloudUnsubscribe(); cloudUnsubscribe = null; }
+                if (cloudUnsubscribe.length) { cloudUnsubscribe.forEach(u => u()); cloudUnsubscribe = []; }
                 if(cloudStatus) cloudStatus.innerHTML = `<span style="color:var(--text-muted);"><i class="fa-solid fa-cloud-arrow-up"></i> ${currentLang === 'ar' ? 'غير متصل' : 'Offline'}</span> <button onclick="document.getElementById('authModal').classList.add('show')" class="btn btn-primary" style="padding:5px 10px; font-size:0.85rem;">${currentLang === 'ar' ? 'دخول للمزامنة' : 'Login to Sync'}</button>`;
             }
         });
@@ -335,19 +335,38 @@ function saveAll() {
 
     if (useCloud && currentUser) { 
         try {
-            let monthlyData = {}; 
-            for(let i=0; i<localStorage.length; i++) { 
-                let k = localStorage.key(i); 
-                if(k && k.startsWith('PlannerMonthData_')) monthlyData[k] = localStorage.getItem(k); 
-            } 
-            db.collection('users').doc(currentUser.uid).set({ 
-                tasks, notes, kanbanTasks, habits, finances, library, profile, monthlyData, lastModified 
+            const userRef = db.collection('users').doc(currentUser.uid);
+
+            // المستند الرئيسي: بيانات خفيفة بس (المهام، الملاحظات، الكانبان، العادات، المالية، المكتبة، البروفايل)
+            // بنمسح صراحة أي حقل monthlyData قديم متراكم من نسخ سابقة، عشان لو هو سبب تخطي حد الـ 1MB،
+            // المستند يرجع يصغر ويقدر يتحفظ تاني بدل ما يفضل عالق فوق الحد للأبد
+            userRef.set({ 
+                tasks, notes, kanbanTasks, habits, finances, library, profile, lastModified,
+                monthlyData: firebase.firestore.FieldValue.delete()
             }, {merge: true}).then(() => {
                 setCloudSyncWarning(false);
             }).catch(e => {
                 console.error("Cloud save failed:", e);
                 setCloudSyncWarning(true);
             }); 
+
+            // الخطط الشهرية: كل مفتاح (يوم/شهر) في مستنده الخاص جوه subcollection منفصلة،
+            // فمهما البيانات كبرت بمرور الوقت، المستند الرئيسي فوق يفضل صغير ومحفوظ دايماً
+            const batch = db.batch();
+            let hasMonthlyWrites = false;
+            for(let i=0; i<localStorage.length; i++) { 
+                let k = localStorage.key(i); 
+                if(k && k.startsWith('PlannerMonthData_')) {
+                    batch.set(userRef.collection('monthlyData').doc(k), { value: localStorage.getItem(k) });
+                    hasMonthlyWrites = true;
+                }
+            } 
+            if (hasMonthlyWrites) {
+                batch.commit().catch(e => {
+                    console.error("Monthly data cloud save failed:", e);
+                    setCloudSyncWarning(true);
+                });
+            }
         } catch(e) {
             console.error("Cloud data parsing error:", e);
         }
@@ -356,12 +375,14 @@ function saveAll() {
 
 function loadFromCloud() { 
     if(!useCloud || !currentUser) return;
-    if (cloudUnsubscribe) cloudUnsubscribe(); // إلغاء أي اشتراك سابق قبل ما نعمل واحد جديد
+    if (cloudUnsubscribe.length) { cloudUnsubscribe.forEach(u => u()); cloudUnsubscribe = []; }
+
+    const userRef = db.collection('users').doc(currentUser.uid);
 
     // onSnapshot بيفتح قناة مباشرة مع Firestore: أي جهاز تاني يحفظ حاجة،
     // كل الأجهزة الأخرى المسجلة بنفس الحساب وفاتحة التطبيق تستقبل التحديث فوراً
     // من غير ما تحتاج تعمل Refresh، وبيتجنب مشكلة مقارنة ساعات الأجهزة المختلفة.
-    cloudUnsubscribe = db.collection('users').doc(currentUser.uid).onSnapshot(doc => {
+    const unsubMain = userRef.onSnapshot(doc => {
         if (!doc.exists) { setCloudSyncWarning(false); return; }
         if (doc.metadata.hasPendingWrites) return; // ده انعكاس لحفظنا إحنا نفسنا، متلزمش نطبقه تاني
 
@@ -373,9 +394,6 @@ function loadFromCloud() {
         if(Array.isArray(data.finances)) finances = data.finances; 
         if(Array.isArray(data.library)) library = data.library; 
         if(data.profile) profile = data.profile; 
-        if(data.monthlyData) { 
-            for(let k in data.monthlyData) localStorage.setItem(k, data.monthlyData[k]); 
-        } 
         if (typeof data.lastModified === 'number') lastModified = data.lastModified;
         persistLocalOnly(); 
         renderViews(); 
@@ -384,6 +402,25 @@ function loadFromCloud() {
         console.error("Cloud sync error:", e);
         setCloudSyncWarning(true);
     });
+
+    // مستمع منفصل لـ subcollection الخطط الشهرية
+    const unsubMonthly = userRef.collection('monthlyData').onSnapshot(snap => {
+        snap.docChanges().forEach(change => {
+            if (change.doc.metadata.hasPendingWrites) return;
+            if (change.type === 'removed') {
+                localStorage.removeItem(change.doc.id);
+            } else {
+                const val = change.doc.data().value;
+                if (typeof val === 'string') localStorage.setItem(change.doc.id, val);
+            }
+        });
+        renderViews();
+    }, e => {
+        console.error("Monthly cloud sync error:", e);
+        setCloudSyncWarning(true);
+    });
+
+    cloudUnsubscribe = [unsubMain, unsubMonthly];
 }
 
 // ----------------------------------------
@@ -446,7 +483,7 @@ window.logoutCloud = async () => {
     if(confirm(currentLang === 'ar' ? 'هل تريد تسجيل الخروج؟ سيتم تفريغ البيانات المحلية والتأكد من مزامنتها سحابياً.' : 'Logout and wipe local data?')) {
         try {
             saveAll();
-            if (cloudUnsubscribe) { cloudUnsubscribe(); cloudUnsubscribe = null; }
+            if (cloudUnsubscribe.length) { cloudUnsubscribe.forEach(u => u()); cloudUnsubscribe = []; }
             await auth.signOut();
             localStorage.clear(); 
             location.reload(); 
