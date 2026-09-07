@@ -1,20 +1,20 @@
 // 1. سجل التحديثات
 const latestReleaseNotes = {
     ar: [
-        "🔄 إصلاح فقدان البيانات مع المزامنة السحابية: لن يتم استبدال بياناتك المحلية الحديثة بنسخة سحابية قديمة بعد الآن.",
+        "🔄 مزامنة فورية حقيقية بين الأجهزة: أي تعديل على جهاز يظهر تلقائياً على باقي أجهزتك المسجلة بنفس الحساب من غير Refresh.",
         "🛡️ استقرار وحماية قصوى: تأمين التطبيق ضد ثغرات الحقن (XSS) في كل الأقسام.",
         "🏦 محفظة المدخرات والاستثمار: متابعة دقيقة للأصول وصافي الثروة.",
         "📊 مؤشرات بصرية مطورة: رسم بياني ثلاثي الأبعاد وإحصائيات فورية."
     ],
     en: [
-        "🔄 Fixed cloud-sync data loss: your newer local data will no longer be overwritten by an older cloud copy.",
+        "🔄 True real-time multi-device sync: changes on one device now appear automatically on your other signed-in devices, no refresh needed.",
         "🛡️ Max Security & Stability: Secured the app against injection (XSS) vulnerabilities across all sections.",
         "🏦 Savings & Investment Wallet: Track net worth and assets accurately.",
         "📊 Enhanced Visual Metrics: 3D Doughnut chart and live indicators."
     ]
 };
 
-const APP_VERSION = 'v29';
+const APP_VERSION = 'v30';
 function checkAndShowChangelog() {
     const savedVersion = localStorage.getItem('fp_version');
     if(savedVersion !== APP_VERSION) {
@@ -43,7 +43,19 @@ window.addEventListener('beforeinstallprompt', (e) => {
 });
 
 if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js?v=28').catch(e => console.log('SW Registration Error:', e));
+    // updateViaCache: 'none' يمنع المتصفح من الاعتماد على أي كاش HTTP قديم
+    // لملف sw.js نفسه، فبيجيب أحدث نسخة منه دايماً عند أي فحص تحديث،
+    // بدل ما ننتظر 24 ساعة (سلوك المتصفح الافتراضي) أو نعتمد على تغيير رقم إصدار يدوي هنا.
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(reg => {
+        // فحص فوري عند فتح الصفحة
+        reg.update().catch(() => {});
+        // وفحص دوري كل دقيقتين طول ما الصفحة مفتوحة، عشان لو المستخدم سايب التاب فاتح لمدة طويلة
+        setInterval(() => reg.update().catch(() => {}), 120000);
+        // وفحص إضافي كل مرة يرجع فيها المستخدم للتاب (بعد ما كان في تاب/تطبيق تاني)
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') reg.update().catch(() => {});
+        });
+    }).catch(e => console.log('SW Registration Error:', e));
     
     let refreshing = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
@@ -84,7 +96,7 @@ const firebaseConfig = {
     appId: "1:334354781516:web:d7d3b13ba7157d617d2be9",
 };
 
-let useCloud = false, auth, db, currentUser = null;
+let useCloud = false, auth, db, currentUser = null, cloudUnsubscribe = null;
 if (firebaseConfig.apiKey && firebaseConfig.apiKey.length > 10) {
     try {
         firebase.initializeApp(firebaseConfig); 
@@ -100,6 +112,7 @@ if (firebaseConfig.apiKey && firebaseConfig.apiKey.length > 10) {
                 loadFromCloud();
             } else {
                 currentUser = null;
+                if (cloudUnsubscribe) { cloudUnsubscribe(); cloudUnsubscribe = null; }
                 if(cloudStatus) cloudStatus.innerHTML = `<span style="color:var(--text-muted);"><i class="fa-solid fa-cloud-arrow-up"></i> ${currentLang === 'ar' ? 'غير متصل' : 'Offline'}</span> <button onclick="document.getElementById('authModal').classList.add('show')" class="btn btn-primary" style="padding:5px 10px; font-size:0.85rem;">${currentLang === 'ar' ? 'دخول للمزامنة' : 'Login to Sync'}</button>`;
             }
         });
@@ -343,38 +356,34 @@ function saveAll() {
 
 function loadFromCloud() { 
     if(!useCloud || !currentUser) return;
-    db.collection('users').doc(currentUser.uid).get().then(doc => { 
-        if (doc.exists) { 
-            const data = doc.data(); 
-            const cloudTime = typeof data.lastModified === 'number' ? data.lastModified : 0;
-            const localIsEmpty = tasks.length === 0 && notes.length === 0 && habits.length === 0 &&
-                finances.length === 0 && library.length === 0 &&
-                kanbanTasks.todo.length === 0 && kanbanTasks.inprogress.length === 0 && kanbanTasks.done.length === 0;
+    if (cloudUnsubscribe) cloudUnsubscribe(); // إلغاء أي اشتراك سابق قبل ما نعمل واحد جديد
 
-            // منع نسخة السحابة القديمة من مسح تعديلات محلية أحدث - بنطبقها بس لو أحدث فعلاً أو الجهاز فاضي
-            if (!localIsEmpty && cloudTime <= lastModified) {
-                setCloudSyncWarning(false);
-                return;
-            }
+    // onSnapshot بيفتح قناة مباشرة مع Firestore: أي جهاز تاني يحفظ حاجة،
+    // كل الأجهزة الأخرى المسجلة بنفس الحساب وفاتحة التطبيق تستقبل التحديث فوراً
+    // من غير ما تحتاج تعمل Refresh، وبيتجنب مشكلة مقارنة ساعات الأجهزة المختلفة.
+    cloudUnsubscribe = db.collection('users').doc(currentUser.uid).onSnapshot(doc => {
+        if (!doc.exists) { setCloudSyncWarning(false); return; }
+        if (doc.metadata.hasPendingWrites) return; // ده انعكاس لحفظنا إحنا نفسنا، متلزمش نطبقه تاني
 
-            if(Array.isArray(data.tasks)) tasks = data.tasks; 
-            if(Array.isArray(data.notes)) notes = data.notes; 
-            if(data.kanbanTasks && typeof data.kanbanTasks === 'object') kanbanTasks = data.kanbanTasks; 
-            if(Array.isArray(data.habits)) habits = data.habits; 
-            if(Array.isArray(data.finances)) finances = data.finances; 
-            if(Array.isArray(data.library)) library = data.library; 
-            if(data.profile) profile = data.profile; 
-            if(data.monthlyData) { 
-                for(let k in data.monthlyData) localStorage.setItem(k, data.monthlyData[k]); 
-            } 
-            lastModified = cloudTime || Date.now();
-            persistLocalOnly(); 
-            renderViews(); 
+        const data = doc.data(); 
+        if(Array.isArray(data.tasks)) tasks = data.tasks; 
+        if(Array.isArray(data.notes)) notes = data.notes; 
+        if(data.kanbanTasks && typeof data.kanbanTasks === 'object') kanbanTasks = data.kanbanTasks; 
+        if(Array.isArray(data.habits)) habits = data.habits; 
+        if(Array.isArray(data.finances)) finances = data.finances; 
+        if(Array.isArray(data.library)) library = data.library; 
+        if(data.profile) profile = data.profile; 
+        if(data.monthlyData) { 
+            for(let k in data.monthlyData) localStorage.setItem(k, data.monthlyData[k]); 
         } 
-    }).catch(e => {
-        console.error("Cloud load error:", e);
+        if (typeof data.lastModified === 'number') lastModified = data.lastModified;
+        persistLocalOnly(); 
+        renderViews(); 
+        setCloudSyncWarning(false);
+    }, e => {
+        console.error("Cloud sync error:", e);
         setCloudSyncWarning(true);
-    }); 
+    });
 }
 
 // ----------------------------------------
@@ -437,6 +446,7 @@ window.logoutCloud = async () => {
     if(confirm(currentLang === 'ar' ? 'هل تريد تسجيل الخروج؟ سيتم تفريغ البيانات المحلية والتأكد من مزامنتها سحابياً.' : 'Logout and wipe local data?')) {
         try {
             saveAll();
+            if (cloudUnsubscribe) { cloudUnsubscribe(); cloudUnsubscribe = null; }
             await auth.signOut();
             localStorage.clear(); 
             location.reload(); 
