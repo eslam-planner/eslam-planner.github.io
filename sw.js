@@ -1,15 +1,15 @@
-// ترقية الإصدار إلى v31 لإجبار كل الأجهزة على تحميل إصلاح مزامنة السحابة
-const CACHE_NAME = 'planner-pro-v31';
+// قمنا بتغيير رقم الإصدار إلى v26 لإجبار الكمبيوتر والموبايل على التحديث
+const CACHE_NAME = 'planner-pro-v26';
 const assets = [
   './',
-  './index.html?v=31',
-  './style.css?v=31',
-  './script.js?v=31',
+  './index.html',
+  './style.css',
+  './script.js',
   './manifest.json'
 ];
 
 self.addEventListener('install', event => {
-  self.skipWaiting(); 
+  // تم مسح أمر التحديث الإجباري من هنا لكي يعطي المستخدم فرصة لقراءة الإشعار
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
       return cache.addAll(assets);
@@ -29,15 +29,15 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
-  if (event.request.mode === 'navigate') {
-    event.respondWith(
-      fetch(event.request).catch(() => caches.match(event.request))
-    );
-  } else {
-    event.respondWith(
-      caches.match(event.request).then(response => {
-        return response || fetch(event.request);
-      })
-    );
+  event.respondWith(
+    caches.match(event.request).then(response => {
+      return response || fetch(event.request);
+    })
+  );
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.action === 'skipWaiting') {
+    self.skipWaiting();
   }
 });
