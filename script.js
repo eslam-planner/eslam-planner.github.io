@@ -1,20 +1,26 @@
 // 1. سجل التحديثات
 const latestReleaseNotes = {
     ar: [
-        "🌐 إصلاح جذري لمشكلة المزامنة: حل تعارض بين نظام العمل بدون إنترنت (Service Worker) واتصال Firestore الفوري كان يمنع أي حفظ سحابي من الوصول للسيرفر.",
-        "🗂️ إصلاح فشل الحفظ للحسابات القديمة: فصل الخطط الشهرية عن الملف الرئيسي في السحابة عشان مايتخطاش الحد الأقصى للحجم.",
-        "🔄 مزامنة فورية حقيقية بين الأجهزة: أي تعديل على جهاز يظهر تلقائياً على باقي أجهزتك المسجلة بنفس الحساب من غير Refresh.",
-        "🛡️ استقرار وحماية قصوى: تأمين التطبيق ضد ثغرات الحقن (XSS) في كل الأقسام."
+        "🔔 صفحة \"التحديثات\" الجديدة بتجمع كل تحديثات التطبيق في مكان واحد.",
+        "📄 تصدير خطة الشهر كملف PDF بمقاس A4، بدعم كامل للعربي والإنجليزي.",
+        "📌 دبوس تثبيت في الملاحظات والمشاريع، مع ترتيب حر بالسحب والإفلات أو الأسهم.",
+        "📖 كروت الملاحظات والمراجع بقت أصغر مع زر \"اقرأ المزيد / عرض أقل\".",
+        "🗂️ تبديل العرض في المراجع (الأحدث أولاً / حسب التصنيف) مع فلتر تصنيف تلقائي.",
+        "🔍 خانة بحث فورية في الملاحظات والمراجع.",
+        "✏️ تعديل اسم أي عادة + ترتيبها بالسحب والإفلات أو الأسهم."
     ],
     en: [
-        "🌐 Root-cause sync fix: resolved a conflict between the offline system (Service Worker) and Firestore's real-time connection that was blocking all cloud saves from reaching the server.",
-        "🗂️ Fixed save failures on older accounts: monthly plans are now stored separately in the cloud so the main record can't hit the size limit.",
-        "🔄 True real-time multi-device sync: changes on one device now appear automatically on your other signed-in devices, no refresh needed.",
-        "🛡️ Max Security & Stability: Secured the app against injection (XSS) vulnerabilities across all sections."
+        "🔔 New \"Updates\" page collects the app's full update history in one place.",
+        "📄 Export the monthly plan as an A4 PDF, with full Arabic and English support.",
+        "📌 Pin notes and projects to the top, with free reordering via drag-and-drop or arrows.",
+        "📖 Notes and reference cards are now compact with a \"Read more / Show less\" toggle.",
+        "🗂️ Switch reference view (Newest first / By category) with an automatic category filter.",
+        "🔍 Instant search box in Notes and Library.",
+        "✏️ Edit any habit's name + reorder via drag-and-drop or arrows."
     ]
 };
 
-const APP_VERSION = 'v32';
+const APP_VERSION = 'v38';
 function checkAndShowChangelog() {
     const savedVersion = localStorage.getItem('fp_version');
     if(savedVersion !== APP_VERSION) {
@@ -23,6 +29,14 @@ function checkAndShowChangelog() {
             if(content) {
                 content.innerHTML = latestReleaseNotes[currentLang].map(n => `✅ ${escapeHtml(n)}`).join('<br><br>');
                 document.getElementById('changelogModal').classList.add('show');
+            }
+            // تنظيف تكرار قديم: v34 وv36 وv37 كانوا بيعرضوا نفس البنود دي مقسّمة/مكررة، فبنشيلهم من السجل عشان مايتلخبطش المستخدم
+            updateLog = updateLog.filter(u => u.version !== 'v34' && u.version !== 'v36' && u.version !== 'v37');
+            // إضافة هذا الإصدار لسجل التحديثات الدائم (لو لسه مش مضاف)
+            if (!updateLog.some(u => u.version === APP_VERSION)) {
+                updateLog.unshift({ version: APP_VERSION, date: getTodayStr(), ar: latestReleaseNotes.ar, en: latestReleaseNotes.en });
+                saveAll();
+                if (typeof renderUpdatesLog === 'function') renderUpdatesLog();
             }
             localStorage.setItem('fp_version', APP_VERSION);
         }, 1500); 
@@ -102,6 +116,13 @@ if (firebaseConfig.apiKey && firebaseConfig.apiKey.length > 10) {
         firebase.initializeApp(firebaseConfig); 
         auth = firebase.auth(); 
         db = firebase.firestore(); 
+        // تفعيل العمل بدون إنترنت: أي تعديل بيتم أوفلاين يتخزن محلياً في طابور الانتظار
+        // وبيتبعت تلقائياً للسيرفر أول ما الاتصال يرجع، من غير ما نضطر نعمل أي كود إضافي.
+        try {
+            db.enablePersistence({ synchronizeTabs: true }).catch(err => {
+                console.warn('Firestore offline persistence not enabled:', err.code);
+            });
+        } catch(e) { console.warn('Firestore offline persistence error:', e); }
         useCloud = true;
         
         auth.onAuthStateChanged(user => {
@@ -142,6 +163,30 @@ function linkify(text) {
 }
 
 // ----------------------------------------
+// نظام "اقرأ المزيد / عرض أقل" لكروت الملاحظات والمراجع
+// ----------------------------------------
+window.toggleCardExpand = (id) => {
+    const el = document.getElementById('content-' + id);
+    const btn = document.getElementById('btn-' + id);
+    if (!el || !btn) return;
+    const collapsed = el.classList.toggle('card-content-collapsed');
+    btn.innerHTML = collapsed 
+        ? (currentLang === 'ar' ? 'اقرأ المزيد <i class="fa-solid fa-chevron-down"></i>' : 'Read more <i class="fa-solid fa-chevron-down"></i>')
+        : (currentLang === 'ar' ? 'عرض أقل <i class="fa-solid fa-chevron-up"></i>' : 'Show less <i class="fa-solid fa-chevron-up"></i>');
+};
+// بعد الرندر، بيخفي زرار "اقرأ المزيد" تلقائياً لو المحتوى أصلاً بيتسع في المساحة المصغّرة من غير قص
+function setupReadMoreButtons(container) {
+    if (!container) return;
+    requestAnimationFrame(() => {
+        container.querySelectorAll('.card-content-collapsed').forEach(el => {
+            const btn = document.getElementById('btn-' + el.id.replace('content-', ''));
+            if (!btn) return;
+            btn.style.display = (el.scrollHeight > el.clientHeight + 2) ? '' : 'none';
+        });
+    });
+}
+
+// ----------------------------------------
 // الترجمة واللغات
 // ----------------------------------------
 const i18n = {
@@ -176,7 +221,10 @@ const i18n = {
         budget_index: "مؤشر الميزانية 📊", opt_inc: "إيراد (+)", opt_exp: "مصروف (-)", opt_save: "إيداع/ادخار (🔒)", opt_withdraw: "تسييل/سحب (🔓)",
         fin_savings: "المدخرات 🔒", fin_bal_avail: "المتاح للصرف", fin_net_worth: "صافي الثروة (إجمالي الأصول):",
         cat_other: "أخرى", cat_food: "🍔 طعام", cat_trans: "🚕 مواصلات", cat_shop: "🛒 تسوق", cat_bills: "💡 فواتير", cat_work: "💻 عمل", cat_fun: "🎉 ترفيه",
-        cat_gold: "🪙 ذهب", cat_stocks: "📈 أسهم", cat_deposit: "🏦 وديعة بنكية", cat_emergency: "🛡️ صندوق طوارئ"
+        cat_gold: "🪙 ذهب", cat_stocks: "📈 أسهم", cat_deposit: "🏦 وديعة بنكية", cat_emergency: "🛡️ صندوق طوارئ",
+        lib_search_ph: "🔍 بحث في المراجع...", notes_search_ph: "🔍 بحث في الملاحظات...",
+        lib_view_date: "الأحدث أولاً", lib_view_cat: "عرض حسب التصنيف", lib_cat_all: "كل التصنيفات",
+        nav_updates: "التحديثات", title_updates: "سجل تحديثات التطبيق 🔄"
     },
     en: {
         nav_dash: "Dashboard", nav_month: "Monthly Plan", nav_today: "Today", nav_pomodoro: "Focus Timer", nav_kanban: "Projects", nav_habits: "Habit Tracker", nav_finance: "Finance", nav_lib: "Library", nav_notes: "Notes", nav_settings: "Settings & Sync",
@@ -209,7 +257,10 @@ const i18n = {
         budget_index: "Budget Index 📊", opt_inc: "Income (+)", opt_exp: "Expense (-)", opt_save: "Deposit/Save (🔒)", opt_withdraw: "Liquidate/Withdraw (🔓)",
         fin_savings: "Savings 🔒", fin_bal_avail: "Available to Spend", fin_net_worth: "Net Worth (Total Assets):",
         cat_other: "Other", cat_food: "🍔 Food", cat_trans: "🚕 Transport", cat_shop: "🛒 Shopping", cat_bills: "💡 Bills", cat_work: "💻 Work", cat_fun: "🎉 Entertainment",
-        cat_gold: "🪙 Gold", cat_stocks: "📈 Stocks", cat_deposit: "🏦 Bank Deposit", cat_emergency: "🛡️ Emergency Fund"
+        cat_gold: "🪙 Gold", cat_stocks: "📈 Stocks", cat_deposit: "🏦 Bank Deposit", cat_emergency: "🛡️ Emergency Fund",
+        lib_search_ph: "🔍 Search references...", notes_search_ph: "🔍 Search notes...",
+        lib_view_date: "Newest first", lib_view_cat: "View by category", lib_cat_all: "All categories",
+        nav_updates: "Updates", title_updates: "App Update Log 🔄"
     }
 };
 
@@ -237,6 +288,7 @@ function setLanguage(lang) {
     currentLang = lang; localStorage.setItem('fp_lang', lang);
     document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr'; document.documentElement.lang = lang;
     document.querySelectorAll('[data-i18n]').forEach(el => { const key = el.getAttribute('data-i18n'); if(i18n[lang][key]) el.innerHTML = i18n[lang][key]; });
+    document.querySelectorAll('[data-i18n-ph]').forEach(el => { const key = el.getAttribute('data-i18n-ph'); if(i18n[lang][key]) el.placeholder = i18n[lang][key]; });
     const toggleBtn = document.getElementById('langLabel'); if(toggleBtn) toggleBtn.innerHTML = lang === 'ar' ? 'EN' : 'AR';
     const kbInp = document.getElementById('newKbItem'); if(kbInp) kbInp.placeholder = lang === 'ar' ? 'اكتب اسم المشروع / المهمة هنا... (اضغط Enter لسطر جديد)' : 'Type project name... (Press Enter for new line)';
     const hbInp = document.getElementById('newHabitInput'); if(hbInp) hbInp.placeholder = lang === 'ar' ? 'عادة جديدة...' : 'New habit...';
@@ -265,9 +317,10 @@ function initColorTheme() {
 // ----------------------------------------
 // تهيئة البيانات ومحرك الحفظ المحصن
 // ----------------------------------------
-let tasks = [], notes = [], profile = { name: '', phone: '' }, kanbanTasks = { todo: [], inprogress: [], done: [] }, habits = [], finances = [], library = [], pomodoroLog = [];
+let tasks = [], notes = [], profile = { name: '', phone: '' }, kanbanTasks = { todo: [], inprogress: [], done: [] }, habits = [], finances = [], library = [], pomodoroLog = [], updateLog = [];
 let lastModified = parseInt(localStorage.getItem('fp_last_modified')) || 0;
 
+try { updateLog = JSON.parse(localStorage.getItem('fp_update_log')) || []; } catch(e) { updateLog = []; }
 try { tasks = JSON.parse(localStorage.getItem('fp_tasks')) || []; } catch(e) { tasks = []; }
 try { notes = JSON.parse(localStorage.getItem('fp_notes')) || []; } catch(e) { notes = []; }
 try { profile = JSON.parse(localStorage.getItem('fp_profile')) || { name: '', phone: '' }; } catch(e) { profile = { name: '', phone: '' }; }
@@ -279,6 +332,7 @@ try { pomodoroLog = JSON.parse(localStorage.getItem('fp_pomodoro_log')) || []; }
 
 const getTodayStr = () => { const d = new Date(); return new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().split('T')[0]; };
 let currentTodayStr = getTodayStr(); let currentDailyDate = currentTodayStr; let currentMonthView = new Date().getMonth(); let currentYearView = new Date().getFullYear();
+let shouldScrollToToday = false; // بيتفعل بس لما ندخل "خطة الشهر" قادمين من أداة تانية
 const monthNamesAr = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"]; const monthNamesEn = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 let myChart = null;
 
@@ -305,6 +359,7 @@ function persistLocalOnly() {
         localStorage.setItem('fp_library', JSON.stringify(library));
         localStorage.setItem('fp_profile', JSON.stringify(profile));
         localStorage.setItem('fp_pomodoro_log', JSON.stringify(pomodoroLog));
+        localStorage.setItem('fp_update_log', JSON.stringify(updateLog));
         localStorage.setItem('fp_last_modified', String(lastModified));
     } catch(err) {
         console.error("Local storage save error:", err);
@@ -341,7 +396,7 @@ function saveAll() {
             // بنمسح صراحة أي حقل monthlyData قديم متراكم من نسخ سابقة، عشان لو هو سبب تخطي حد الـ 1MB،
             // المستند يرجع يصغر ويقدر يتحفظ تاني بدل ما يفضل عالق فوق الحد للأبد
             userRef.set({ 
-                tasks, notes, kanbanTasks, habits, finances, library, profile, lastModified,
+                tasks, notes, kanbanTasks, habits, finances, library, profile, lastModified, updateLog,
                 monthlyData: firebase.firestore.FieldValue.delete()
             }, {merge: true}).then(() => {
                 setCloudSyncWarning(false);
@@ -394,6 +449,7 @@ function loadFromCloud() {
         if(Array.isArray(data.finances)) finances = data.finances; 
         if(Array.isArray(data.library)) library = data.library; 
         if(data.profile) profile = data.profile; 
+        if(Array.isArray(data.updateLog)) updateLog = data.updateLog;
         if (typeof data.lastModified === 'number') lastModified = data.lastModified;
         persistLocalOnly(); 
         renderViews(); 
@@ -673,6 +729,7 @@ document.addEventListener('DOMContentLoaded', () => {
             e.currentTarget.classList.add('active'); 
             let target = e.currentTarget.getAttribute('data-target'); 
             document.getElementById(target).classList.add('active'); 
+            if (target === 'monthlyView') shouldScrollToToday = true;
             renderViews(); 
         }); 
     });
@@ -684,7 +741,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function renderViews() { 
     renderDashboard(); renderMonthly(); renderDaily(); renderKanban(); renderHabits(); renderFinance(); renderLibrary(); renderNotes(); 
     if(typeof renderPomodoroLog === 'function') renderPomodoroLog();
-    if(typeof renderChangelog === 'function') renderChangelog();
+    if(typeof renderUpdatesLog === 'function') renderUpdatesLog();
 }
 
 // ----------------------------------------
@@ -801,16 +858,71 @@ document.getElementById('updateTaskBtn').onclick = () => {
 function renderNotes() { 
     const container = document.getElementById('notesContainer');
     if(!container) return;
-    container.innerHTML = notes.length === 0 ? `<p style="text-align:center; color:var(--text-muted); grid-column: 1/-1;">${currentLang==='ar'?'لا توجد ملاحظات.':'No notes.'}</p>` : '';
-    notes.forEach(note => { 
+
+    const searchInput = document.getElementById('notesSearchInput');
+    const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+    // المثبتة (pinned) تظهر أولاً، وبعدين باقي الملاحظات بترتيبها المحفوظ (اللي ممكن يتغير بالسحب/الأسهم)
+    let items = notes.map((n, idx) => ({...n, _idx: idx})).sort((a, b) => (b.pinned?1:0) - (a.pinned?1:0));
+    if (query) {
+        items = items.filter(n => 
+            (n.title || '').toLowerCase().includes(query) || 
+            (n.content || '').toLowerCase().includes(query)
+        );
+    }
+
+    if (items.length === 0) {
+        const msg = notes.length === 0 
+            ? (currentLang==='ar'?'لا توجد ملاحظات.':'No notes.') 
+            : (currentLang==='ar'?'لا توجد نتائج.':'No results.');
+        container.innerHTML = `<p style="text-align:center; color:var(--text-muted); grid-column: 1/-1;">${msg}</p>`;
+        return;
+    }
+    container.innerHTML = '';
+    items.forEach(note => { 
         let contactHTML = note.phone ? `<div style="display:flex; gap:10px; margin-bottom:10px;"><a href="tel:${escapeHtml(note.phone)}" class="icon-btn" style="color:var(--primary);"><i class="fa-solid fa-phone"></i></a><a href="https://wa.me/${escapeHtml(note.phone).replace(/\+/g,'')}" target="_blank" rel="noopener noreferrer" class="icon-btn" style="color:#25D366;"><i class="fa-brands fa-whatsapp"></i></a></div>` : '';
-        container.innerHTML += `<div class="note-card" onclick="editNote(${note.id})"><button class="delete-note no-print" onclick="event.stopPropagation(); deleteNote(${note.id})"><i class="fa-solid fa-trash"></i></button><span class="note-date"><i class="fa-solid fa-calendar"></i> ${escapeHtml(note.date)}</span><h3 style="margin-bottom: 0.5rem;">${escapeHtml(note.title)}</h3>${contactHTML}<div class="render-area" style="background:none; border:none; padding:0;">${linkify(note.content)}</div></div>`; 
+        container.innerHTML += `<div class="note-card" draggable="true" data-note-id="${note.id}" ondragstart="noteDragStart(event)" ondragover="noteDragOver(event)" ondrop="noteDrop(event)" ondragend="noteDragEnd(event)" onclick="editNote(${note.id})">
+            <div class="no-print" style="position:absolute; top:10px; left:10px; display:flex; gap:6px; align-items:center;">
+                <button class="icon-btn" style="color:${note.pinned?'var(--primary)':'var(--text-muted)'};" onclick="event.stopPropagation(); toggleNotePin(${note.id})" title="${currentLang==='ar'?'تثبيت':'Pin'}"><i class="fa-solid fa-thumbtack"></i></button>
+                <button class="icon-btn" style="color:var(--text-muted);" onclick="event.stopPropagation(); moveNotePosition(${note.id}, -1)" title="${currentLang==='ar'?'لأعلى':'Up'}"><i class="fa-solid fa-chevron-up"></i></button>
+                <button class="icon-btn" style="color:var(--text-muted);" onclick="event.stopPropagation(); moveNotePosition(${note.id}, 1)" title="${currentLang==='ar'?'لأسفل':'Down'}"><i class="fa-solid fa-chevron-down"></i></button>
+                <button class="delete-note" style="position:static;" onclick="event.stopPropagation(); deleteNote(${note.id})"><i class="fa-solid fa-trash"></i></button>
+            </div>
+            ${note.pinned ? `<i class="fa-solid fa-thumbtack" style="position:absolute; top:10px; right:10px; color:var(--primary); font-size:0.8rem;"></i>` : ''}
+            <span class="note-date"><i class="fa-solid fa-calendar"></i> ${escapeHtml(note.date)}</span><h3 style="margin-bottom: 0.5rem;">${escapeHtml(note.title)}</h3>${contactHTML}<div class="render-area card-content-collapsed" id="content-note-${note.id}" style="background:none; border:none; padding:0;">${linkify(note.content)}</div><button class="read-more-btn no-print" id="btn-note-${note.id}" onclick="event.stopPropagation(); toggleCardExpand('note-${note.id}')">${currentLang==='ar'?'اقرأ المزيد <i class="fa-solid fa-chevron-down"></i>':'Read more <i class="fa-solid fa-chevron-down"></i>'}</button></div>`; 
     });
+    setupReadMoreButtons(container);
 }
+window.toggleNotePin = id => { let n = notes.find(x => x.id === id); if(n) { n.pinned = !n.pinned; saveAll(); renderNotes(); } };
+window.moveNotePosition = (id, direction) => {
+    const idx = notes.findIndex(n => n.id === id);
+    if (idx === -1) return;
+    const newIdx = idx + direction;
+    if (newIdx < 0 || newIdx >= notes.length) return;
+    [notes[idx], notes[newIdx]] = [notes[newIdx], notes[idx]];
+    saveAll();
+    renderNotes();
+};
+let draggedNoteId = null;
+window.noteDragStart = (e) => { draggedNoteId = parseInt(e.currentTarget.dataset.noteId); e.currentTarget.style.opacity = '0.4'; };
+window.noteDragOver = (e) => { e.preventDefault(); };
+window.noteDrop = (e) => {
+    e.preventDefault();
+    const targetId = parseInt(e.currentTarget.dataset.noteId);
+    if (draggedNoteId === null || draggedNoteId === targetId) return;
+    const fromIdx = notes.findIndex(n => n.id === draggedNoteId);
+    const toIdx = notes.findIndex(n => n.id === targetId);
+    if (fromIdx === -1 || toIdx === -1) return;
+    const [moved] = notes.splice(fromIdx, 1);
+    notes.splice(toIdx, 0, moved);
+    saveAll();
+    renderNotes();
+};
+window.noteDragEnd = (e) => { e.currentTarget.style.opacity = '1'; draggedNoteId = null; };
 document.getElementById('saveNoteBtn').onclick = () => { 
     const t = document.getElementById('noteTitle').value, c = document.getElementById('noteContent').value, d = document.getElementById('noteDate').value, p = document.getElementById('notePhone').value; 
     if(!t && !c) return;
-    notes.push({ id: Date.now(), title: t.trim() || (currentLang==='ar'?'ملاحظة جديدة':'New Note'), content: c, date: d, phone: p }); 
+    notes.unshift({ id: Date.now(), title: t.trim() || (currentLang==='ar'?'ملاحظة جديدة':'New Note'), content: c, date: d, phone: p, pinned: false }); 
     saveAll(); 
     document.getElementById('noteModal').classList.remove('show'); 
     stopContinuousDictation(); 
@@ -848,11 +960,64 @@ document.getElementById('updateNoteBtn').onclick = () => {
 function renderLibrary() { 
     const container = document.getElementById('libraryContainer');
     if(!container) return;
-    container.innerHTML = library.map(l => {
+
+    const searchInput = document.getElementById('libSearchInput');
+    const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+    const viewMode = document.getElementById('libViewModeSelect') ? document.getElementById('libViewModeSelect').value : 'date';
+    const catFilterEl = document.getElementById('libCategoryFilterSelect');
+    const catFilter = catFilterEl ? catFilterEl.value : 'all';
+
+    // تحديث قائمة التصنيفات المتاحة في الفلتر (لو فيه تصنيفات جديدة اتضافت)
+    if (catFilterEl) {
+        const cats = [...new Set(library.map(l => l.category || 'عام'))].sort();
+        const currentVal = catFilterEl.value;
+        catFilterEl.innerHTML = `<option value="all">${i18n[currentLang].lib_cat_all}</option>` + cats.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+        if (cats.includes(currentVal) || currentVal === 'all') catFilterEl.value = currentVal;
+    }
+
+    let items = library.slice();
+
+    // فلترة البحث (بتشتغل على العنوان والمحتوى والتصنيف)
+    if (query) {
+        items = items.filter(l => 
+            (l.title || '').toLowerCase().includes(query) || 
+            (l.content || '').toLowerCase().includes(query) ||
+            (l.category || '').toLowerCase().includes(query)
+        );
+    }
+
+    const renderCard = l => {
         let contactHTML = l.phone ? `<a href="tel:${escapeHtml(l.phone)}" style="margin-left:10px; color:var(--primary);"><i class="fa-solid fa-phone"></i></a><a href="https://wa.me/${escapeHtml(l.phone).replace(/\+/g,'')}" target="_blank" rel="noopener noreferrer" style="margin-left:10px; color:#25D366;"><i class="fa-brands fa-whatsapp"></i></a>` : '';
-        return `<div class="lib-card" onclick="editLib(${l.id})"><button class="icon-btn no-print" style="position:absolute; top:10px; left:10px; color:var(--danger);" onclick="event.stopPropagation(); delLib(${l.id})"><i class="fa-solid fa-trash"></i></button><span class="lib-cat">${escapeHtml(l.category)}</span><h3>${contactHTML}${escapeHtml(l.title)}</h3><div class="render-area">${linkify(l.content)}</div></div>`;
-    }).join('') || `<p style="text-align:center; color:var(--text-muted); grid-column: 1/-1;">${currentLang==='ar'?'أضف مرجعك الأول.':'Add your first reference.'}</p>`;
+        return `<div class="lib-card" onclick="editLib(${l.id})"><button class="icon-btn no-print" style="position:absolute; top:10px; left:10px; color:var(--danger);" onclick="event.stopPropagation(); delLib(${l.id})"><i class="fa-solid fa-trash"></i></button><span class="lib-cat">${escapeHtml(l.category)}</span><h3>${contactHTML}${escapeHtml(l.title)}</h3><div class="render-area card-content-collapsed" id="content-lib-${l.id}">${linkify(l.content)}</div><button class="read-more-btn no-print" id="btn-lib-${l.id}" onclick="event.stopPropagation(); toggleCardExpand('lib-${l.id}')">${currentLang==='ar'?'اقرأ المزيد <i class="fa-solid fa-chevron-down"></i>':'Read more <i class="fa-solid fa-chevron-down"></i>'}</button></div>`;
+    };
+
+    const emptyMsg = library.length === 0 
+        ? `<p style="text-align:center; color:var(--text-muted); grid-column: 1/-1;">${currentLang==='ar'?'أضف مرجعك الأول.':'Add your first reference.'}</p>`
+        : `<p style="text-align:center; color:var(--text-muted); grid-column: 1/-1;">${currentLang==='ar'?'لا توجد نتائج.':'No results.'}</p>`;
+
+    if (viewMode === 'category') {
+        let filteredItems = catFilter === 'all' ? items : items.filter(l => (l.category || 'عام') === catFilter);
+        if (filteredItems.length === 0) { container.innerHTML = emptyMsg; return; }
+        // تجميع حسب التصنيف، وترتيب المجموعات أبجدياً، وكل مجموعة بترتيب الأحدث أولاً
+        const groups = {};
+        filteredItems.forEach(l => { const c = l.category || 'عام'; (groups[c] = groups[c] || []).push(l); });
+        container.innerHTML = Object.keys(groups).sort().map(cat => {
+            const catItems = groups[cat].sort((a, b) => b.id - a.id);
+            return `<div style="grid-column: 1/-1; font-weight:bold; color:var(--primary); margin:10px 0 5px; padding-bottom:5px; border-bottom:2px solid var(--border-color);">${escapeHtml(cat)}</div>` +
+                   `<div style="grid-column: 1/-1; display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:15px;">${catItems.map(renderCard).join('')}</div>`;
+        }).join('');
+    } else {
+        items.sort((a, b) => b.id - a.id); // الأحدث أولاً (id مبني على Date.now())
+        container.innerHTML = items.map(renderCard).join('') || emptyMsg;
+    }
+    setupReadMoreButtons(container);
 }
+window.onLibViewModeChange = () => {
+    const viewMode = document.getElementById('libViewModeSelect').value;
+    const catFilterEl = document.getElementById('libCategoryFilterSelect');
+    if (catFilterEl) catFilterEl.style.display = viewMode === 'category' ? '' : 'none';
+    renderLibrary();
+};
 document.getElementById('saveLibBtn').onclick = () => { 
     let t = document.getElementById('libTitle').value, c = document.getElementById('libCategory').value, text = document.getElementById('libContent').value, p = document.getElementById('libPhone').value; 
     if(!t || !t.trim()) return;
@@ -986,7 +1151,8 @@ function renderMonthly() {
         };
     });
 
-    if (isCurrentMonth) {
+    if (isCurrentMonth && shouldScrollToToday) {
+        shouldScrollToToday = false;
         setTimeout(() => {
             let todayCard = document.getElementById('todayMonthCard');
             if (todayCard) todayCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1086,11 +1252,20 @@ function initPomodoro() {
 // المشاريع (Kanban)
 // ----------------------------------------
 function renderKanban() {
+    // FLIP: نلقط مواضع الكروت الحالية قبل ما نعيد الرسم، عشان نحركها بسلاسة بدل القفزة المفاجئة
+    const firstRects = {};
+    document.querySelectorAll('.kb-card[data-kb-id]').forEach(el => {
+        firstRects[el.dataset.kbId] = el.getBoundingClientRect();
+    });
+
     ['todo', 'inprogress', 'done'].forEach(col => {
         const container = document.querySelector(`.kanban-items[data-status="${col}"]`);
         if(!container) return;
+
+        // المثبتة (pinned) تظهر أولاً في نفس العمود
+        const sortedItems = [...kanbanTasks[col]].sort((a, b) => (b.pinned?1:0) - (a.pinned?1:0));
         
-        container.innerHTML = kanbanTasks[col].map(i => {
+        container.innerHTML = sortedItems.map(i => {
             let subs = i.subtasks || [];
             let subsHTML = subs.map((sub, idx) => `
                 <div style="display:flex; align-items:center; gap:8px; margin-top:8px; padding: 5px; background: var(--bg-main); border-radius: 4px; border: 1px solid var(--border-color);">
@@ -1101,11 +1276,15 @@ function renderKanban() {
                 </div>
             `).join('');
 
-            return `<div class="kb-card" draggable="true" ondragstart="drag(event, ${i.id}, '${col}')" style="cursor:grab; border-right: 4px solid var(--primary);">
+            return `<div class="kb-card" draggable="true" data-kb-id="${i.id}" data-kb-col="${col}" ondragstart="drag(event, ${i.id}, '${col}')" ondragover="allowDrop(event)" ondrop="dropOnCard(event, ${i.id}, '${col}')" style="cursor:grab; border-right: 4px solid var(--primary); position:relative;">
+                ${i.pinned ? `<i class="fa-solid fa-thumbtack" style="position:absolute; top:8px; left:8px; color:var(--primary); font-size:0.8rem;"></i>` : ''}
                 <div style="display:flex; justify-content:space-between; align-items: flex-start; margin-bottom:5px;">
                     <strong style="font-size: 1rem; flex:1;">${escapeHtml(i.text)}</strong>
-                    <div style="display:flex; gap:8px; align-items: center;">
+                    <div style="display:flex; gap:8px; align-items: center; flex-wrap:wrap;">
                         ${i.phone ? `<a href="https://wa.me/${escapeHtml(i.phone).replace(/\+/g,'')}" target="_blank" rel="noopener noreferrer" class="no-print" style="color:#25D366; font-size:1.2rem;"><i class="fa-brands fa-whatsapp"></i></a>` : ''}
+                        <button onclick="toggleKbPin(${i.id}, '${col}')" class="icon-btn no-print" style="color:${i.pinned?'var(--primary)':'var(--text-main)'};" title="${currentLang==='ar'?'تثبيت':'Pin'}"><i class="fa-solid fa-thumbtack"></i></button>
+                        <button onclick="moveKbPosition(${i.id}, '${col}', -1)" class="icon-btn no-print" style="color:var(--text-main);" title="${currentLang==='ar'?'لأعلى':'Up'}"><i class="fa-solid fa-arrow-up"></i></button>
+                        <button onclick="moveKbPosition(${i.id}, '${col}', 1)" class="icon-btn no-print" style="color:var(--text-main);" title="${currentLang==='ar'?'لأسفل':'Down'}"><i class="fa-solid fa-arrow-down"></i></button>
                         <button onclick="moveKb(${i.id}, '${col}', -1)" class="icon-btn no-print" style="color:var(--text-main);"><i class="fa-solid fa-arrow-right"></i></button>
                         <button onclick="addSubtask(${i.id}, '${col}')" class="icon-btn no-print" style="color:var(--primary);"><i class="fa-solid fa-plus"></i></button>
                         <button onclick="editKb(${i.id}, '${col}')" class="icon-btn no-print" style="color:var(--text-muted);"><i class="fa-solid fa-pen"></i></button>
@@ -1117,12 +1296,29 @@ function renderKanban() {
             </div>`;
         }).join('');
     });
+
+    // FLIP: نحرك كل كارت من مكانه القديم لمكانه الجديد بانتقال ناعم بدل القفزة المفاجئة
+    document.querySelectorAll('.kb-card[data-kb-id]').forEach(el => {
+        const first = firstRects[el.dataset.kbId];
+        if (!first) return;
+        const last = el.getBoundingClientRect();
+        const dx = first.left - last.left;
+        const dy = first.top - last.top;
+        if (dx || dy) {
+            el.style.transition = 'none';
+            el.style.transform = `translate(${dx}px, ${dy}px)`;
+            requestAnimationFrame(() => {
+                el.style.transition = 'transform 0.3s ease';
+                el.style.transform = '';
+            });
+        }
+    });
 }
 
 window.addKanbanItem = () => { 
     const inp = document.getElementById('newKbItem'); 
     if(inp && inp.value.trim()) { 
-        kanbanTasks.todo.push({id: Date.now(), text: inp.value.trim(), subtasks: []}); 
+        kanbanTasks.todo.push({id: Date.now(), text: inp.value.trim(), subtasks: [], pinned: false}); 
         inp.value = ''; saveAll(); renderKanban(); 
     } 
 };
@@ -1135,6 +1331,19 @@ window.moveKb = (id, c, d) => {
         kanbanTasks[c]=kanbanTasks[c].filter(x=>x.id!==id); 
         kanbanTasks[cols[n]].push(i); saveAll(); renderKanban(); 
     } 
+};
+window.moveKbPosition = (id, col, direction) => {
+    const idx = kanbanTasks[col].findIndex(x => x.id === id);
+    if (idx === -1) return;
+    const newIdx = idx + direction;
+    if (newIdx < 0 || newIdx >= kanbanTasks[col].length) return;
+    [kanbanTasks[col][idx], kanbanTasks[col][newIdx]] = [kanbanTasks[col][newIdx], kanbanTasks[col][idx]];
+    saveAll();
+    renderKanban();
+};
+window.toggleKbPin = (id, col) => {
+    let i = kanbanTasks[col].find(x => x.id === id);
+    if (i) { i.pinned = !i.pinned; saveAll(); renderKanban(); }
 };
 
 window.drag = (ev, id, col) => { ev.dataTransfer.setData("id", id); ev.dataTransfer.setData("col", col); };
@@ -1149,6 +1358,21 @@ window.drop = ev => {
         kanbanTasks[sc]=kanbanTasks[sc].filter(x=>x.id!==id); 
         kanbanTasks[tc].push(i); saveAll(); renderKanban(); 
     } 
+};
+window.dropOnCard = (ev, targetId, targetCol) => {
+    ev.preventDefault();
+    ev.stopPropagation(); // منع وصول الحدث لـ drop() بتاع العمود، عشان نتحكم في الموضع بالظبط
+    let id = parseInt(ev.dataTransfer.getData("id"));
+    let sc = ev.dataTransfer.getData("col");
+    if (!sc || id === targetId) return;
+    let item = kanbanTasks[sc].find(x => x.id === id);
+    if (!item) return;
+    kanbanTasks[sc] = kanbanTasks[sc].filter(x => x.id !== id);
+    let targetIdx = kanbanTasks[targetCol].findIndex(x => x.id === targetId);
+    if (targetIdx === -1) targetIdx = kanbanTasks[targetCol].length;
+    kanbanTasks[targetCol].splice(targetIdx, 0, item);
+    saveAll();
+    renderKanban();
 };
 
 window.editKb = (id, col) => { 
@@ -1515,8 +1739,19 @@ function renderHabits() {
     let html = `<table class="habit-table"><thead><tr><th>${habitText}</th>`; 
     for(let i=1; i<=dim; i++) html += `<th>${i}</th>`; 
     html += `</tr></thead><tbody>`; 
-    habits.forEach(h => { 
-        html += `<tr><td class="habit-name"><button class="icon-btn no-print" style="color:red;" onclick="delHabit(${h.id})">x</button> ${escapeHtml(h.name)}</td>`; 
+    habits.forEach((h, idx) => { 
+        html += `<tr draggable="true" data-habit-id="${h.id}" ondragstart="habitDragStart(event)" ondragover="habitDragOver(event)" ondrop="habitDrop(event)" ondragend="habitDragEnd(event)">
+            <td class="habit-name">
+                <div class="no-print" style="display:inline-flex; align-items:center; gap:2px; vertical-align:middle;">
+                    <i class="fa-solid fa-grip-vertical" style="cursor:grab; color:var(--text-muted); font-size:0.75rem;" title="${currentLang==='ar'?'اسحب لإعادة الترتيب':'Drag to reorder'}"></i>
+                    <span style="display:inline-flex; flex-direction:column; line-height:0.6;">
+                        <button class="icon-btn" style="color:var(--text-muted); font-size:0.65rem; padding:0;" onclick="moveHabit(${h.id}, -1)" ${idx===0?'disabled style="opacity:0.3;"':''} title="${currentLang==='ar'?'لأعلى':'Up'}"><i class="fa-solid fa-caret-up"></i></button>
+                        <button class="icon-btn" style="color:var(--text-muted); font-size:0.65rem; padding:0;" onclick="moveHabit(${h.id}, 1)" ${idx===habits.length-1?'disabled style="opacity:0.3;"':''} title="${currentLang==='ar'?'لأسفل':'Down'}"><i class="fa-solid fa-caret-down"></i></button>
+                    </span>
+                    <button class="icon-btn" style="color:red;" onclick="delHabit(${h.id})">x</button>
+                </div>
+                <span onclick="editHabit(${h.id})" style="cursor:pointer;" title="${currentLang==='ar'?'اضغط للتعديل':'Click to edit'}"> ${escapeHtml(h.name)}</span>
+            </td>`; 
         for(let i=1; i<=dim; i++) { 
             let k = `${currentYearView}-${currentMonthView}-${i}`; 
             html += `<td><div class="habit-check ${h.days && h.days[k]?'done':''}" onclick="toggleHabit(${h.id}, '${k}')">✓</div></td>`; 
@@ -1535,6 +1770,48 @@ window.addNewHabit = () => {
         renderHabits(); 
         renderDashboard(); 
     } 
+};
+window.editHabit = (id) => {
+    let h = habits.find(x => x.id === id);
+    if(!h) return;
+    const newName = prompt(currentLang==='ar' ? 'عدّل اسم العادة:' : 'Edit habit name:', h.name);
+    if (newName !== null && newName.trim()) {
+        h.name = newName.trim();
+        saveAll();
+        renderHabits();
+        renderDashboard();
+    }
+};
+window.moveHabit = (id, direction) => {
+    const idx = habits.findIndex(h => h.id === id);
+    if (idx === -1) return;
+    const newIdx = idx + direction;
+    if (newIdx < 0 || newIdx >= habits.length) return;
+    [habits[idx], habits[newIdx]] = [habits[newIdx], habits[idx]];
+    saveAll();
+    renderHabits();
+};
+let draggedHabitId = null;
+window.habitDragStart = (e) => {
+    draggedHabitId = parseInt(e.currentTarget.dataset.habitId);
+    e.currentTarget.style.opacity = '0.4';
+};
+window.habitDragOver = (e) => { e.preventDefault(); };
+window.habitDrop = (e) => {
+    e.preventDefault();
+    const targetId = parseInt(e.currentTarget.dataset.habitId);
+    if (draggedHabitId === null || draggedHabitId === targetId) return;
+    const fromIdx = habits.findIndex(h => h.id === draggedHabitId);
+    const toIdx = habits.findIndex(h => h.id === targetId);
+    if (fromIdx === -1 || toIdx === -1) return;
+    const [moved] = habits.splice(fromIdx, 1);
+    habits.splice(toIdx, 0, moved);
+    saveAll();
+    renderHabits();
+};
+window.habitDragEnd = (e) => {
+    e.currentTarget.style.opacity = '1';
+    draggedHabitId = null;
 };
 window.toggleHabit = (id, k) => { 
     let h = habits.find(x=>x.id===id); 
@@ -1620,12 +1897,23 @@ window.changeFontSize = (size) => {
     localStorage.setItem('plannerFontSize', size);
 };
 
-window.renderChangelog = () => {
-    const container = document.getElementById('changelogContainer');
+window.renderUpdatesLog = () => {
+    const container = document.getElementById('updatesLogContainer');
     if(!container) return;
-    const notesTitle = currentLang === 'ar' ? '<strong style="color:var(--primary);">ميزات الإصدار الأخير:</strong><br>' : '<strong style="color:var(--primary);">Latest Version Features:</strong><br>';
-    const notesList = latestReleaseNotes[currentLang].map(note => `- ${escapeHtml(note)}`).join('<br>');
-    container.innerHTML = notesTitle + notesList;
+    if (updateLog.length === 0) {
+        container.innerHTML = `<p style="text-align:center; color:var(--text-muted);">${currentLang==='ar'?'هيظهر هنا كل تحديث جديد للتطبيق أول ما يصدر.':'New app updates will appear here as they are released.'}</p>`;
+        return;
+    }
+    container.innerHTML = updateLog.map((entry, idx) => {
+        const items = (entry[currentLang] || entry.ar || []).map(n => `<div style="margin-bottom:8px;">✅ ${escapeHtml(n)}</div>`).join('');
+        return `<div class="lib-card" style="margin-bottom:15px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <h3 style="margin:0; color:var(--primary);">${escapeHtml(entry.version)} ${idx===0 ? `<span style="font-size:0.75rem; background:var(--primary); color:#fff; padding:2px 8px; border-radius:10px; margin-${currentLang==='ar'?'right':'left'}:8px;">${currentLang==='ar'?'الأحدث':'Latest'}</span>` : ''}</h3>
+                <span style="color:var(--text-muted); font-size:0.85rem;"><i class="fa-solid fa-calendar"></i> ${escapeHtml(entry.date)}</span>
+            </div>
+            <div>${items}</div>
+        </div>`;
+    }).join('');
 };
 
 const manualUpBtn = document.getElementById('manualUpdateBtn');
@@ -1716,6 +2004,53 @@ window.exportFinanceExcel = () => {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, currentLang === 'ar' ? "التقرير المالي" : "Finance Report");
     XLSX.writeFile(wb, currentLang === 'ar' ? "تقرير_المحفظة_المالية.xlsx" : "Finance_Portfolio.xlsx");
+};
+
+window.exportMonthPDF = () => {
+    const dim = new Date(currentYearView, currentMonthView + 1, 0).getDate();
+    const monthNames = {
+        ar: ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'],
+        en: ['January','February','March','April','May','June','July','August','September','October','November','December']
+    }[currentLang];
+
+    let daysHTML = '';
+    let hasContent = false;
+    for (let d = 1; d <= dim; d++) {
+        const storageKey = `PlannerMonthData_${currentYearView}_${currentMonthView}_${d}`;
+        const text = localStorage.getItem(storageKey);
+        const phone = localStorage.getItem(storageKey + '_phone');
+        if (!text && !phone) continue;
+        hasContent = true;
+        daysHTML += `<div style="margin-bottom:18px; padding:14px; border:1px solid #e5e7eb; border-radius:10px; page-break-inside: avoid;">
+            <div style="font-weight:700; color:#3b82f6; margin-bottom:8px; font-size:14px;">${d} ${monthNames[currentMonthView]} ${currentYearView}</div>
+            ${text ? `<div style="white-space:pre-wrap; word-break:break-word; color:#111827; font-size:13px; line-height:1.6;">${escapeHtml(text)}</div>` : ''}
+            ${phone ? `<div style="margin-top:8px; color:#4b5563; font-size:12px;" dir="ltr">📞 ${escapeHtml(phone)}</div>` : ''}
+        </div>`;
+    }
+
+    if (!hasContent) return alert(currentLang === 'ar' ? 'لا توجد بيانات لتصديرها في هذا الشهر' : 'No data to export for this month');
+
+    const element = document.createElement('div');
+    element.style.padding = '30px';
+    element.style.direction = currentLang === 'ar' ? 'rtl' : 'ltr';
+    element.style.fontFamily = 'Inter, sans-serif';
+    element.innerHTML = `
+        <div style="text-align:center; margin-bottom:30px; border-bottom: 3px solid #3b82f6; padding-bottom: 15px;">
+            <h1 style="color:#111827; margin:0; font-size: 24px; font-weight:700;">Planner Pro Max</h1>
+            <h3 style="color:#6b7280; margin-top:5px; font-size: 14px;">${currentLang==='ar' ? `خطة شهر ${monthNames[currentMonthView]} ${currentYearView}` : `${monthNames[currentMonthView]} ${currentYearView} Plan`}</h3>
+        </div>
+        ${daysHTML}
+    `;
+
+    const opt = {
+        margin: [0.4, 0.4],
+        filename: currentLang === 'ar' ? `خطة_${monthNames[currentMonthView]}_${currentYearView}.pdf` : `Plan_${monthNames[currentMonthView]}_${currentYearView}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2.5, useCORS: true },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+    };
+
+    html2pdf().set(opt).from(element).save();
 };
 
 window.exportFinancePDF = () => {
