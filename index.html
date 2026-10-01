@@ -45,7 +45,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <link rel="stylesheet" href="style.css?v=38-2">
+    <link rel="stylesheet" href="style.css?v=39">
 </head>
 <body>
 
@@ -79,6 +79,8 @@
                 <a href="#" class="nav-item" data-target="pomodoroView"><i class="fa-solid fa-stopwatch"></i> <span data-i18n="nav_pomodoro">مؤقت التركيز</span></a>
                 <a href="#" class="nav-item" data-target="kanbanView"><i class="fa-solid fa-kanban"></i> <span data-i18n="nav_kanban">المشاريع</span></a>
                 <a href="#" class="nav-item" data-target="habitsView"><i class="fa-solid fa-check-double"></i> <span data-i18n="nav_habits">متتبع العادات</span></a>
+                <a href="#" class="nav-item" data-target="healthView"><i class="fa-solid fa-weight-scale"></i> <span data-i18n="nav_health">الوزن والسعرات</span></a>
+                <a href="#" class="nav-item" data-target="subsView"><i class="fa-solid fa-receipt"></i> <span data-i18n="nav_subs">الاشتراكات</span></a>
                 <a href="#" class="nav-item" data-target="financeView"><i class="fa-solid fa-wallet"></i> <span data-i18n="nav_finance">المتتبع المالي</span></a>
                 <a href="#" class="nav-item" data-target="libraryView"><i class="fa-solid fa-bookmark"></i> <span data-i18n="nav_lib">مكتبة المراجع</span></a>
                 <a href="#" class="nav-item" data-target="notesView"><i class="fa-solid fa-book"></i> <span data-i18n="nav_notes">الملاحظات</span></a>
@@ -144,6 +146,76 @@
                 </div>
             </div>
 
+            <div id="subsView" class="view-section">
+                <div class="content-header" style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+                    <h2 data-i18n="title_subs">الاشتراكات 📱</h2>
+                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                        <button class="btn btn-secondary no-print" onclick="exportSubscriptionsPDF()"><i class="fa-solid fa-file-pdf" style="color:#ef4444;"></i> <span data-i18n="sub_export_pdf">تصدير PDF</span></button>
+                        <button class="btn btn-secondary no-print" onclick="exportSubscriptionsExcel()"><i class="fa-solid fa-file-excel" style="color:#22c55e;"></i> <span data-i18n="sub_export_excel">تصدير Excel</span></button>
+                        <button class="btn btn-primary no-print" onclick="openSubModal()"><i class="fa-solid fa-plus"></i> <span data-i18n="sub_add">إضافة اشتراك</span></button>
+                    </div>
+                </div>
+                <div class="no-print" style="display:flex; gap:10px; margin-bottom:15px;">
+                    <button id="subTabActive" class="btn btn-primary" onclick="setSubView('active')" data-i18n="sub_active">نشطة</button>
+                    <button id="subTabArchive" class="btn btn-secondary" onclick="setSubView('archive')" data-i18n="sub_archive">المحفوظات</button>
+                </div>
+                <div id="subsContainer" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:15px;"></div>
+            </div>
+
+            <div id="subModal" class="modal">
+                <div class="modal-content">
+                    <h3 id="subModalTitle" data-i18n="sub_add">إضافة اشتراك</h3>
+                    <input type="hidden" id="subEditId">
+                    <label style="font-size:0.85rem; color:var(--text-muted); margin-top:10px; display:block;" data-i18n="sub_name">اسم الاشتراك</label>
+                    <input type="text" id="subName" data-i18n-ph="sub_name" placeholder="اسم الاشتراك" style="width:100%;">
+
+                    <div class="input-group" style="flex-wrap:wrap;">
+                        <div style="flex:1; min-width:140px;">
+                            <label style="font-size:0.85rem; color:var(--text-muted); display:block;" data-i18n="sub_freq">الدورية</label>
+                            <select id="subFreq" onchange="subAutoEnd()" style="width:100%;">
+                                <option value="daily" data-i18n="sub_daily">يومي</option>
+                                <option value="weekly" data-i18n="sub_weekly">أسبوعي</option>
+                                <option value="monthly" selected data-i18n="sub_monthly">شهري</option>
+                                <option value="yearly" data-i18n="sub_yearly">سنوي</option>
+                            </select>
+                        </div>
+                        <div style="flex:1; min-width:140px;">
+                            <label style="font-size:0.85rem; color:var(--text-muted); display:block;" data-i18n="sub_count">عدد الدورات</label>
+                            <input type="number" id="subCount" onchange="subAutoEnd()" min="1" value="1" style="width:100%;">
+                        </div>
+                    </div>
+
+                    <div class="input-group" style="flex-wrap:wrap;">
+                        <div style="flex:1; min-width:140px;">
+                            <label style="font-size:0.85rem; color:var(--text-muted); display:block;" data-i18n="sub_total">المبلغ الكلي</label>
+                            <input type="number" id="subTotal" onchange="subCalcFromTotal()" style="width:100%;">
+                        </div>
+                        <div style="flex:1; min-width:140px;">
+                            <label style="font-size:0.85rem; color:var(--text-muted); display:block;" data-i18n="sub_per_cycle">المبلغ لكل دورة</label>
+                            <input type="number" id="subPerCycle" onchange="subCalcFromPerCycle()" style="width:100%;">
+                        </div>
+                    </div>
+
+                    <div class="input-group" style="flex-wrap:wrap;">
+                        <div style="flex:1; min-width:140px;">
+                            <label style="font-size:0.85rem; color:var(--text-muted); display:block;" data-i18n="sub_start">تاريخ البداية</label>
+                            <input type="date" id="subStart" onchange="subAutoEnd()" style="width:100%;">
+                        </div>
+                        <div style="flex:1; min-width:140px;">
+                            <label style="font-size:0.85rem; color:var(--text-muted); display:block;" data-i18n="sub_end">تاريخ النهاية</label>
+                            <input type="date" id="subEnd" onchange="subAutoCount()" style="width:100%;">
+                        </div>
+                    </div>
+
+                    <label style="font-size:0.85rem; color:var(--text-muted); margin-top:10px; display:block;" data-i18n="sub_notes">ملاحظات</label>
+                    <textarea id="subNotes" data-i18n-ph="sub_notes" placeholder="ملاحظات" rows="2" style="width:100%;"></textarea>
+                    <div class="modal-actions">
+                        <button class="btn btn-secondary close-modal" data-i18n="btn_cancel">إلغاء</button>
+                        <button class="btn btn-primary" onclick="saveSubscription()" data-i18n="sub_save">حفظ</button>
+                    </div>
+                </div>
+            </div>
+
            <div id="financeView" class="view-section">
                 <div class="content-header" style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
                     <h2 data-i18n="title_finance">المتتبع المالي</h2>
@@ -169,6 +241,14 @@
                     <div style="position: relative; width: 100%; max-width: 300px; height: 160px; margin: auto;">
                         <canvas id="financeChart"></canvas>
                     </div>
+                </div>
+
+                <div style="background: var(--card-bg); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); margin: 20px 0;">
+                    <h4 style="margin-bottom: 10px; color: var(--text-main); font-size: 1rem; font-weight: 600;" data-i18n="pareto_title">قاعدة 80/20 📌</h4>
+                    <div style="position: relative; width: 100%; height: 220px;">
+                        <canvas id="financeParetoChart"></canvas>
+                    </div>
+                    <div id="financeParetoInsight" style="margin-top:10px; font-size:0.85rem; color:var(--text-muted);"></div>
                 </div>
 
                 <div style="background: var(--card-bg); padding: 15px; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 20px;">
@@ -234,6 +314,15 @@
                     </div>
                     <button class="btn btn-primary no-print" onclick="openTaskModal()"><i class="fa-solid fa-plus"></i> <span data-i18n="btn_add">إضافة</span></button>
                 </div>
+                <div class="no-print" style="margin-bottom:10px;">
+                    <select id="dailyQFilter" onchange="renderDaily()" style="padding:8px; border-radius:8px; border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-main);">
+                        <option value="all" data-i18n="q_all">الكل</option>
+                        <option value="urgent" data-i18n="q_urgent">عاجل</option>
+                        <option value="important" data-i18n="q_important">مهم</option>
+                        <option value="delegate" data-i18n="q_delegate">مفوّض</option>
+                        <option value="cancelled" data-i18n="q_cancelled">ملغي</option>
+                    </select>
+                </div>
                 <div id="plannerContainer" class="planner-container"></div>
             </div>
 
@@ -278,10 +367,49 @@
                         <button class="btn btn-primary" onclick="addKanbanItem()" style="height: auto;"><i class="fa-solid fa-plus"></i> <span data-i18n="btn_add">إضافة</span></button>
                     </div>
                 </div>
+                <div id="kanbanParetoInsight" class="no-print" style="display:none; background: var(--card-bg); padding:12px 15px; border-radius:10px; border:1px solid var(--border-color); margin-bottom:15px; font-size:0.85rem; color:var(--text-muted);"></div>
                 <div class="kanban-board">
                     <div class="kanban-col" id="kb-todo"><h3 style="border-bottom: 3px solid var(--danger);"><span data-i18n="kb_todo">💡 أفكار/مهام</span></h3><div class="kanban-items" data-status="todo" ondragover="allowDrop(event)" ondrop="drop(event)"></div></div>
                     <div class="kanban-col" id="kb-inprogress"><h3 style="border-bottom: 3px solid var(--warning);"><span data-i18n="kb_inprog">⏳ التنفيذ</span></h3><div class="kanban-items" data-status="inprogress" ondragover="allowDrop(event)" ondrop="drop(event)"></div></div>
                     <div class="kanban-col" id="kb-done"><h3 style="border-bottom: 3px solid var(--success);"><span data-i18n="kb_done">✅ مكتملة</span></h3><div class="kanban-items" data-status="done" ondragover="allowDrop(event)" ondrop="drop(event)"></div></div>
+                </div>
+            </div>
+
+            <div id="healthView" class="view-section">
+                <div class="content-header"><h2 data-i18n="title_health">الوزن والسعرات ⚖️</h2></div>
+                <div class="profile-card" style="max-width:100%; margin-bottom:20px;">
+                    <h3 data-i18n="w_title">متابعة الوزن</h3>
+                    <div id="weightSummary" style="margin:12px 0;"></div>
+                    <div class="no-print" style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+                        <input type="number" step="0.1" id="weightInput" data-i18n-ph="w_kg" placeholder="الوزن (كجم)" style="padding:10px; border-radius:8px; border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-main); box-sizing:border-box;">
+                        <input type="date" id="weightDate" style="padding:10px; border-radius:8px; border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-main); box-sizing:border-box;">
+                        <button class="btn btn-primary" onclick="addWeight()"><i class="fa-solid fa-plus"></i> <span data-i18n="w_add">إضافة وزن</span></button>
+                    </div>
+                    <div class="no-print" style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:12px;">
+                        <strong data-i18n="w_goal_title">🎯 الهدف</strong>
+                        <input type="number" step="0.1" id="goalWeight" data-i18n-ph="w_target" placeholder="الوزن المستهدف (كجم)" style="padding:10px; border-radius:8px; border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-main); box-sizing:border-box;">
+                        <input type="date" id="goalDate" title="تاريخ الوصول للهدف" style="padding:10px; border-radius:8px; border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-main); box-sizing:border-box;">
+                        <button class="btn btn-secondary" onclick="saveWeightGoal()" data-i18n="w_save_goal">حفظ الهدف</button>
+                    </div>
+                    <canvas id="weightChart" height="110"></canvas>
+                    <div id="weightList" style="margin-top:12px;"></div>
+                </div>
+                <div class="profile-card" style="max-width:100%;">
+                    <h3 data-i18n="c_title">🔥 السعرات الحرارية</h3>
+                    <div class="no-print" style="display:flex; flex-wrap:wrap; gap:10px; margin:12px 0;">
+                        <input type="date" id="calDate" onchange="renderHealth()" style="padding:10px; border-radius:8px; border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-main); box-sizing:border-box;">
+                        <input type="number" id="calGoal" onchange="saveCalorieGoal()" title="الهدف اليومي" style="padding:10px; border-radius:8px; border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-main); box-sizing:border-box;">
+                    </div>
+                    <div id="calSummary" style="margin-bottom:12px;"></div>
+                    <div class="no-print" style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+                        <input type="text" id="calDesc" data-i18n-ph="c_desc" placeholder="اسم الوجبة / التمرين" style="flex:2; min-width:140px; padding:10px; border-radius:8px; border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-main); box-sizing:border-box;">
+                        <input type="number" id="calValue" data-i18n-ph="c_cal" placeholder="السعرات" style="padding:10px; border-radius:8px; border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-main); box-sizing:border-box;">
+                        <select id="calType" style="padding:10px; border-radius:8px; border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-main); box-sizing:border-box;"><option value="in" data-i18n="c_in">تناولت</option><option value="out" data-i18n="c_out">حرقت</option></select>
+                        <button class="btn btn-primary" onclick="addCalorie()"><i class="fa-solid fa-plus"></i> <span data-i18n="c_add">إضافة</span></button>
+                    </div>
+                    <div id="calList"></div>
+                    <h4 style="margin-top:16px;">📅 <span id="calHistTitle"></span></h4>
+                    <div id="calHistory"></div>
                 </div>
             </div>
 
@@ -328,6 +456,12 @@
                 <option value="20px">كبير جداً</option>
             </select>
         </div>
+
+                    <hr style="margin: 20px 0;">
+                    <h3>🔔 <span data-i18n="notif_enable">تفعيل الإشعارات</span></h3>
+                    <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:10px;">Urgent tasks, subscriptions, habits & focus sessions — works while the app is open.</p>
+                    <button class="btn btn-secondary no-print" style="width:100%;" onclick="enableAppNotifications()" data-i18n="notif_enable">تفعيل الإشعارات</button>
+                    <p id="notifStatusText" style="font-size:0.85rem; color:var(--text-muted); margin-top:8px;"></p>
 
                     <hr style="margin: 20px 0;">
                     <h3 data-i18n="title_sync">المزامنة السحابية الحية ☁️</h3>
@@ -625,6 +759,6 @@
         <i class="fa-solid fa-bolt"></i>
     </button>
 
-<script src="script.js?v=38-2"></script>
+<script src="script.js?v=39"></script>
 </body>
 </html>
